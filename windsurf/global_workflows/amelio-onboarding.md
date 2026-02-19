@@ -194,13 +194,39 @@ echo >> ~/.zprofile && echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~
 **Step 3 — Install ONLY missing tools:**
 ```bash
 brew install node yarn git git-lfs gh mongosh
-brew install --cask docker
 ```
 
 > **Note on yarn**: If `brew install yarn` reports a symlink conflict (`/opt/homebrew/bin/yarn already exists`), run:
 > ```bash
 > brew link --overwrite yarn
 > ```
+
+**Step 3b — Docker (choose one approach — ask the user):**
+- **A**: Docker Desktop (full GUI — requires manual launch and system extension approval)
+- **B**: Colima — Docker CLI only, fully headless, no GUI required (recommended for full automation)
+
+If **A** (Docker Desktop):
+```bash
+brew install --cask docker
+open /Applications/Docker.app
+```
+> Tell user: **Docker Desktop is launching — wait for the whale icon in the menu bar before continuing.**
+
+If **B** (Colima — headless Docker Engine):
+```bash
+brew install colima docker docker-compose
+colima start --cpu 4 --memory 8
+```
+> Colima runs a lightweight Linux VM with Docker Engine. All `docker` and `docker-compose` commands work identically to Docker Desktop.
+> To auto-start on login:
+> ```bash
+> brew services start colima
+> ```
+
+Verify Docker is available:
+```bash
+docker info --format '{{.ServerVersion}}'
+```
 
 **Step 4 — Add dotnet tools to PATH:**
 ```bash
@@ -249,26 +275,9 @@ winget install --id Docker.DockerDesktop -e
 
 **After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
 
-### 1d — Docker Desktop
-Ask the user with a multiple-choice question:
-- **A**: Docker Desktop is already running — I see the icon in the menu bar
-- **B**: Install Docker Desktop for me automatically (macOS or Windows)
-- **C**: Docker is available via CLI only (no Desktop GUI) — skip and verify
+### 1d — Docker Engine (verify running)
 
-**If B (auto-install on macOS)**:
-```bash
-brew install --cask docker
-open /Applications/Docker.app
-```
-Then tell the user: **Docker Desktop is launching — wait for the whale icon to appear in the menu bar before continuing.**
-
-**If B (auto-install on Windows)**:
-```powershell
-winget install --id Docker.DockerDesktop -e
-```
-Then tell the user: **Docker Desktop has been installed. Please launch it from the Start menu and wait for it to fully start.**
-
-Once the user confirms Docker is running (options A or B), verify:
+Verify Docker is available and running:
 // turbo
 ```bash
 docker info --format '{{.ServerVersion}}' 2>&1
@@ -278,6 +287,13 @@ On Windows (PowerShell):
 ```powershell
 docker info --format '{{.ServerVersion}}'
 ```
+
+If Docker is not running:
+- **macOS with Docker Desktop**: `open /Applications/Docker.app` and wait for the whale icon
+- **macOS with Colima**: `colima start`
+- **Windows**: Launch Docker Desktop from the Start menu
+
+If Docker is not installed at all, go back to Step 1b/1c and install it.
 
 ### 1e — Verify all
 // turbo
@@ -504,37 +520,68 @@ Expected: 5 containers running (amelio_mongodb, dev_db, test_db, dev_cache, mail
 
 ### 6a — Import MongoDB Freemium database
 
-The MongoDB dump is distributed as a folder (`DB_Freemium/Freemium/`) containing ~242 compressed BSON files (~286 MB). It is **not included in the git repo** due to its size.
+The MongoDB dump (`DB_Freemium/`) contains ~242 compressed BSON files (~286 MB). It is **not in the git repo** — it is hosted on SharePoint.
+
+**Step 1 — Download the dump from SharePoint:**
+
+> 🔐 **SharePoint access required** — you must be logged in with your `@amelio.co` Microsoft account.
+> URL: https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=ZRbsE2
+
+Download `DB_Freemium.zip` (or the `DB_Freemium/` folder) from SharePoint and place it in `${AMELIO_DIR}/`.
+
+If downloaded as a zip, extract it:
+```bash
+cd "${AMELIO_DIR}" && unzip DB_Freemium.zip -d . && rm DB_Freemium.zip
+```
+
+On Windows (PowerShell):
+```powershell
+Expand-Archive -Path "${AMELIO_DIR}\DB_Freemium.zip" -DestinationPath "${AMELIO_DIR}" -Force
+Remove-Item "${AMELIO_DIR}\DB_Freemium.zip"
+```
+
+Verify the dump is in place:
+```bash
+ls "${AMELIO_DIR}/DB_Freemium/Freemium/" | head -5
+```
+Expected: `.bson.gz` and `.metadata.json.gz` files.
 
 Ask the user:
-> The Legacy Backend needs the Freemium MongoDB database dump.
-> Your team lead should provide you with the `DB_Freemium/` folder (contains `Freemium/` with ~242 .bson.gz files, ~286 MB).
->
-> **Copy the folder to**: `${AMELIO_DIR}/DB_Freemium/`
-> (This path is already in `.gitignore` — it won't be committed.)
->
-> Do you have the dump ready?
-- **A**: Yes, I copied `DB_Freemium/` to the right location
-- **B**: Yes, but it's in a different location (I will provide the path)
-- **C**: No, I will get it later — skip for now
+- **A**: DB_Freemium is downloaded and extracted at `${AMELIO_DIR}/DB_Freemium/`
+- **B**: It's in a different location (I will provide the path)
+- **C**: I can't access SharePoint right now — skip for now
 
-If A, use default path: `${AMELIO_DIR}/DB_Freemium/Freemium/`
-If B, ask for the path.
 If C, skip and note that Legacy Backend will have no data on first run.
 
-If A or B:
+**Step 2 — Import into MongoDB:**
+
+If A, use: `DB_PATH="${AMELIO_DIR}/DB_Freemium/Freemium"`
+If B, ask for the path and set `DB_PATH` accordingly.
+
 ```bash
 mongorestore --host localhost:27017 \
   --username ameliodb --password ameliodb \
   --authenticationDatabase admin \
   --db Freemium \
-  "<PATH_TO_DB_FREEMIUM>/Freemium/"
+  --gzip \
+  "${DB_PATH}/"
+```
+
+On Windows (PowerShell):
+```powershell
+mongorestore --host localhost:27017 `
+  --username ameliodb --password ameliodb `
+  --authenticationDatabase admin `
+  --db Freemium `
+  --gzip `
+  "${DB_PATH}\"
 ```
 
 Verify:
 ```bash
 mongosh "mongodb://ameliodb:ameliodb@localhost:27017/Freemium?authSource=admin" --eval "db.getCollectionNames().length + ' collections imported'"
 ```
+Expected: `121 collections imported` (or similar non-zero number).
 
 ### 6b — Run PostgreSQL migrations (Performance Backend)
 ```bash
@@ -956,8 +1003,43 @@ Suggest these bookmarks to the user:
 | Mailpit (Email UI) | `http://localhost:8025` |
 
 ### Optional tools to install later:
-- **Bruno** — API client (like Postman): https://www.usebruno.com/downloads
-- **DBeaver** — Database client (PostgreSQL, MongoDB): https://dbeaver.io/download/
+
+These tools can be installed via CLI — no manual download required:
+
+**Bruno** — API client (like Postman):
+```bash
+brew install --cask bruno
+```
+On Windows: `winget install --id Bruno.Bruno -e`
+
+**DBeaver Community** — Universal database client (supports MongoDB, PostgreSQL, and 80+ databases):
+```bash
+brew install --cask dbeaver-community
+```
+On Windows: `winget install --id dbeaver.dbeaver -e`
+
+> Once DBeaver is installed, it will auto-detect running databases. Connect to:
+> - **MongoDB** (Legacy): `localhost:27017`, user `ameliodb`, password `ameliodb`, auth DB `admin`
+> - **PostgreSQL dev_db** (Performance): `localhost:5432`, user `dev_user`, password `dev_password`, DB `dev_db`
+> - **PostgreSQL test_db** (Performance): `localhost:5433`, user `dev_user`, password `dev_password`, DB `test_db`
+
+Ask the user:
+- **A**: Install Bruno and DBeaver now via CLI
+- **B**: Install only Bruno
+- **C**: Install only DBeaver
+- **D**: Skip — I'll install them manually later
+
+If A or B:
+```bash
+brew install --cask bruno
+```
+On Windows: `winget install --id Bruno.Bruno -e`
+
+If A or C:
+```bash
+brew install --cask dbeaver-community
+```
+On Windows: `winget install --id dbeaver.dbeaver -e`
 
 ---
 
