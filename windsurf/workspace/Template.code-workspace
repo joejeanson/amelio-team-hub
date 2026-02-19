@@ -160,6 +160,7 @@
 				"cwd": "<AMELIO_DIR>/REPOs/amelio-performance-backend"
 			}
 		},
+		"npm.autoDetect": "on",
 		"workbench.startupEditor": "none",
 		"workbench.editor.restoreViewState": false,
 		"git.ignoreLimitWarning": true,
