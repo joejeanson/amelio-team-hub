@@ -851,15 +851,19 @@ cd "${FS_DIR}/Amelio - Back-End" && dotnet restore
 
 > **Known issue — 401 Unauthorized**: If `dotnet restore` fails with `401 Unauthorized` on the `Amelio.MongoRepository` feed, the PAT does not have **Packaging (Read)** scope. Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, update `${HOME_DIR}/.nuget/NuGet/NuGet.Config` with the new PAT, and retry.
 
-> **Known issue — NU1202 (package incompatible with net8.0)**: If `dotnet restore` fails with `NU1202: Amelio.MongoRepository 3.x.x n'est pas compatible avec net8.0`, the ADO feed only publishes a newer version targeting net10.0. The projects require `2.1.3` (net8.0) which is no longer on the feed. **Workaround**: copy the package from another developer's NuGet cache:
+> **Known issue — NU1202 (package incompatible with net8.0)**: If `dotnet restore` fails with `NU1202: Amelio.MongoRepository 3.x.x n'est pas compatible avec net8.0`, the ADO NuGet feed (`Amelio.MongoRepository`) only contains version `3.2.3785` (net10.0). The Legacy Backend projects require `2.1.3` (net8.0).
+>
+> **Permanent fix (team action required)**: Ask the team to republish `Amelio.MongoRepository 2.1.3` on the ADO feed `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`.
+>
+> **Temporary workaround** (until republished): copy the package from a colleague's NuGet cache:
 > ```bash
-> # Ask a team member for their NuGet cache path, or check other users on this machine
-> find /Users -name "amelio.mongorepository.2.1.3.nupkg" 2>/dev/null
-> # Then copy to your cache:
+> # Find the package on another machine or another user on this machine
+> find /Users -path "*/amelio.mongorepository/2.1.3" -type d 2>/dev/null
+> # Copy to your cache:
 > mkdir -p "${HOME_DIR}/.nuget/packages/amelio.mongorepository/2.1.3"
 > cp -R "<SOURCE_PATH>/2.1.3/"* "${HOME_DIR}/.nuget/packages/amelio.mongorepository/2.1.3/"
 > ```
-> After copying, re-run `dotnet restore` — NuGet will use the local cache instead of downloading from the feed.
+> After copying, re-run `dotnet restore` — NuGet will use the local cache.
 
 Verify NuGet restore succeeded (macOS):
 ```bash

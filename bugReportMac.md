@@ -125,23 +125,21 @@
 - **Fix applied**: Utiliser `npm install` au lieu de `yarn install` pour Performance FE — npm lit correctement `~/.npmrc` et résout `@amelio/ui-library` depuis le feed ADO. Supprimer le `package-lock.json` créé par npm après l'install (ce repo utilise `yarn.lock`)
 - **Workflow fix**: Step 8c réécrit dans `amelio-onboarding.md` — `npm install` + `rm package-lock.json` + vérification `git status`
 
-### 22. `Amelio.MongoRepository 2.1.3` retiré du feed ADO — seul `3.2.3785` (net10.0) disponible
+### 22. `Amelio.MongoRepository 2.1.3` absent du feed ADO NuGet — à republier
 - **Error**: `NU1202: Le package Amelio.MongoRepository 3.2.3785 n'est pas compatible avec net8.0`
-- **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
-- **Cause**: Le feed ADO ne contient plus que la version `3.2.3785` qui cible `net10.0`. Les projets Legacy Backend demandent `2.1.3` (net8.0) qui n'est plus publiée sur le feed
-- **Versions disponibles sur le feed**: `["3.2.3785"]` — `2.1.3` absente
-- **Fix applied (workaround)**: Le `.nupkg` `2.1.3` était présent dans le cache NuGet de l'utilisateur `j-mini` sur la même machine. Copié vers le cache `devtest` :
+- **Package type**: **NuGet** (pas npm) — référencé dans les `.csproj` du Legacy Backend via `<PackageReference Include="Amelio.MongoRepository" Version="2.1.3" />`
+- **Feed ADO**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
+- **Versions disponibles sur le feed**: `["3.2.3785"]` (net10.0 uniquement) — `2.1.3` absente
+- **Versions disponibles sur nuget.org public**: aucune — package privé
+- **Cause**: La version `2.1.3` (net8.0) n'est plus publiée sur le feed. Les projets Legacy Backend la demandent explicitement
+- **Workaround temporaire appliqué sur `devtest`**: Copie du `.nupkg` depuis le cache NuGet de `j-mini` :
   ```bash
   mkdir -p ~/.nuget/packages/amelio.mongorepository/2.1.3
   cp -R /Users/j-mini/.nuget/packages/amelio.mongorepository/2.1.3/* ~/.nuget/packages/amelio.mongorepository/2.1.3/
   ```
-- **Résultat**: `dotnet restore` réussit — NuGet utilise le cache local `2.1.3` au lieu de télécharger `3.2.3785` du feed
-- **Workaround pour nouveaux devs**: Copier le dossier `~/.nuget/packages/amelio.mongorepository/2.1.3/` depuis une machine existante (ex: `j-mini`) vers la nouvelle machine
-- **À investiguer (long terme)**:
-  - La version `2.1.3` a-t-elle été intentionnellement retirée du feed ?
-  - Faut-il republier `2.1.3` sur le feed pour que les nouveaux devs puissent restore sans workaround ?
-  - Ou migrer les projets Legacy Backend vers `net10.0` + `3.2.3785` ?
-- **Workflow fix**: Ajouter une étape dans Step 8f pour détecter et appliquer ce workaround si nécessaire
+- **Solution permanente (action équipe requise)**: Republier `Amelio.MongoRepository 2.1.3` sur le feed ADO `Amelio.MongoRepository` pour que les nouveaux devs puissent `dotnet restore` sans workaround
+- **À décider (long terme)**: Migrer les projets Legacy Backend vers `net10.0` + `3.2.3785` (implique mise à jour du `TargetFramework` dans les `.csproj`)
+- **Workflow fix**: Step 8f documente le workaround cache NuGet en attendant la republication
 
 ---
 
