@@ -329,7 +329,7 @@ cy.get('[data-testid="submit-btn"]').click();
 ### 📚 References (dataTestId):
 - [Testing Library - ByTestId](https://testing-library.com/docs/queries/bytestid/)
 - [Cypress Best Practices](https://docs.cypress.io/guides/references/best-practices)
-- [Amelio UI Library Examples](../../Amelio_FullStack/amelio-ui-library/src/components/)
+- [Amelio UI Library Examples](../../REPOs/amelio-ui-library/src/components/)
 
 ---
 

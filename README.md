@@ -29,15 +29,15 @@ amelio-team-hub/                  <- this repo = AMELIO_DIR
 ├── setup.sh
 ├── config-files/
 ├── windsurf/
+├── Documentations/               <- gitignored
+├── WorkSpace/                    <- gitignored
+│   └── Amelio_<user>.code-workspace
 ├── REPOs/                        <- gitignored
-│   ├── Amelio_FullStack/
-│   │   ├── Amelio - Back-End/
-│   │   ├── Amelio - React/
-│   │   ├── amelio-performance-backend/
-│   │   ├── amelio-performance-fe/
-│   │   └── amelio-ui-library/
-│   ├── Documentations/
-│   └── WorkSpace/
+│   ├── Amelio - Back-End/
+│   ├── Amelio - React/
+│   ├── amelio-performance-backend/
+│   ├── amelio-performance-fe/
+│   └── amelio-ui-library/
 └── DB_Freemium/                  <- gitignored
 ```
 
@@ -51,12 +51,15 @@ Classic layout: repos are cloned into `~/Amelio_primary/` (or a custom path). Th
 
 ```
 ~/Amelio_primary/                 <- AMELIO_DIR
+├── Documentations/
+├── WorkSpace/
+│   └── Amelio_<user>.code-workspace
 ├── REPOs/
-│   ├── Amelio_FullStack/
-│   │   ├── Amelio - Back-End/
-│   │   └── ...
-│   ├── Documentations/
-│   └── WorkSpace/
+│   ├── Amelio - Back-End/
+│   ├── Amelio - React/
+│   ├── amelio-performance-backend/
+│   ├── amelio-performance-fe/
+│   └── amelio-ui-library/
 └── DB_Freemium/
 
 ~/amelio-team-hub/                <- separate, standalone
@@ -172,16 +175,15 @@ amelio-team-hub/                          <- this repo (= AMELIO_DIR in parent m
 │       └── Simple.code-workspace         <- Template (paths replaced at install)
 │
 │  ── Created by onboarding (Mode A: parent) ──────────────────
+├── Documentations/                       <- gitignored
+├── WorkSpace/                            <- gitignored
+│   └── Amelio_<user>.code-workspace
 ├── REPOs/                                <- gitignored
-│   ├── Amelio_FullStack/
-│   │   ├── Amelio - Back-End/
-│   │   ├── Amelio - React/
-│   │   ├── amelio-performance-backend/
-│   │   ├── amelio-performance-fe/
-│   │   └── amelio-ui-library/
-│   ├── Documentations/
-│   └── WorkSpace/
-│       └── Simple_<user>.code-workspace
+│   ├── Amelio - Back-End/
+│   ├── Amelio - React/
+│   ├── amelio-performance-backend/
+│   ├── amelio-performance-fe/
+│   └── amelio-ui-library/
 └── DB_Freemium/                          <- gitignored
 ```
 
@@ -191,7 +193,7 @@ amelio-team-hub/                          <- this repo (= AMELIO_DIR in parent m
 |------|------|-------------|
 | 0 | Welcome & Setup | Detects OS, asks for install path and ADO PAT |
 | 1 | System Dependencies | Validates and installs node, yarn, npm, git, dotnet, docker, mongosh |
-| 2 | Directory Structure | Creates `REPOs/Amelio_FullStack/` inside chosen root (team-hub or `Amelio_primary`) |
+| 2 | Directory Structure | Creates `REPOs/`, `WorkSpace/`, `Documentations/` inside chosen root (team-hub or `Amelio_primary`) |
 | 3 | Clone Repos | Clones 5 Azure DevOps repos |
 | 4 | Deploy Windsurf Config | Rules, skills, global rules, workflows |
 | 5 | Docker Containers | MongoDB + PostgreSQL + Redis + Mailpit |
@@ -199,7 +201,7 @@ amelio-team-hub/                          <- this repo (= AMELIO_DIR in parent m
 | 7 | Config Files | appsettings, .env files, NuGet (Mac) |
 | 8 | Install & Build | npm/yarn install, UI Library build, dotnet restore |
 | 9 | Extensions | Installs IDE extensions (3 tiers) |
-| 10 | Workspace | Generates personalized `Simple_<user>.code-workspace` |
+| 10 | Workspace | Generates personalized `Amelio_<user>.code-workspace` in `WorkSpace/` |
 | 11 | Bookmarks | Useful URLs for ADO, local services, tools |
 | 12 | Secondary (optional) | Second workspace for parallel tasks |
 | 13 | Validation | 12-point checklist to verify everything |

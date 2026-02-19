@@ -111,6 +111,26 @@
 - **Impact**: Performance Frontend dev mode will not authenticate against Legacy Backend
 - **Resolution**: Start Legacy Frontend (http://localhost:3011), log in, open DevTools > Network, copy the Bearer token from any API request header, paste into `.env` as `VITE_DEV_TOKEN`
 
+### 17. `.npmrc` repo files modified instead of using `~/.npmrc` global
+- **Error**: N/A — process error (git-tracked file polluted)
+- **Cause**: Step 8a incorrectly wrote ADO credentials into the repo-level `.npmrc` files (`amelio-ui-library/.npmrc`, `amelio-performance-fe/.npmrc`), which are git-tracked
+- **Why it worked in another environment**: npm/yarn automatically merges `~/.npmrc` (user-level) with the project `.npmrc`. The other environment likely had credentials already in `~/.npmrc` from a previous setup (e.g. `vsts-npm-auth` on Windows, or a prior manual setup). The repo `.npmrc` only needs to declare the registry URL — credentials must never be added there.
+- **Fix applied**: Reverted both `.npmrc` files with `git checkout .npmrc`. Added credentials to `~/.npmrc` (user-level) instead.
+- **Workflow fix**: Step 8a completely rewritten — now writes to `~/.npmrc` only, with explicit warning never to modify repo `.npmrc` files
+
+### 18. `WorkSpace/` and `Documentations/` created inside `REPOs/` instead of at `AMELIO_DIR` root
+- **Error**: N/A — wrong directory structure
+- **Cause**: Step 2 mkdir commands placed `WorkSpace/` and `Documentations/` inside `REPOs/`, but they should be at the root of `AMELIO_DIR` alongside `windsurf/`, `config-files/`, etc.
+- **Fix applied**: Moved both directories: `mv REPOs/WorkSpace WorkSpace` and `mv REPOs/Documentations Documentations`
+- **Workspace fix**: Updated `Amelio_devtest.code-workspace` Documentations path from `REPOs/Documentations` to `Documentations`
+- **Workflow fix**: Step 2 mkdir commands corrected; added layout note explaining the structure
+
+### 19. Workspace `path: "."` pointed to `WorkSpace/` folder, not `amelio-team-hub` root
+- **Error**: Team Hub folder in workspace opened `WorkSpace/` directory instead of the repo root
+- **Cause**: The workspace file was initially saved in `REPOs/WorkSpace/` and used `path: "."` which resolved to that folder. After moving to `amelio-team-hub/WorkSpace/`, the correct relative path is `".."` (one level up).
+- **Fix applied**: Changed `"path": "."` to `"path": ".."` — workspace is in `amelio-team-hub/WorkSpace/`, so `".."` correctly points to `amelio-team-hub/` root ✅
+- **Workflow fix**: Step 10 generation logic must use `".."` for the Team Hub folder path when workspace is saved in `AMELIO_DIR/WorkSpace/`
+
 ### 16. Workspace file created without asking user for filename / without checking for existing file
 - **Error**: N/A — process error
 - **Cause**: Step 10 generated `Simple_devtest.code-workspace` using the OS username without asking the user for their preferred name, and without checking if a file already existed at that path

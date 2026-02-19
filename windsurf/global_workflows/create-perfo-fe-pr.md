@@ -77,7 +77,7 @@ If the tool is not found:
 1. Explain briefly in the chat what it does:
    > "The test-snapshot tool runs your tests and compares coverage against a baseline. It must live outside your repos. I'll help you set it up."
 2. Propose locations using `ask_user_question`:
-   - **Next to repos**: A `test-snapshots` folder alongside the repo directories (e.g., sibling of `Amelio_FullStack`)
+   - **Next to repos**: A `test-snapshots` folder alongside the repo directories (e.g., sibling of `amelio-performance-fe` inside `REPOs/`)
    - **Windsurf config**: `~/.codeium/windsurf/test-snapshots/`
    - *(User can also type a custom path)*
 3. After the user chooses, create the directory and generate both scripts inside it **using the exact contents from Appendix A and Appendix B** at the bottom of this workflow. Make the shell script executable (`chmod +x`).

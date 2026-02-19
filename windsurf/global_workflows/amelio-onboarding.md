@@ -13,7 +13,7 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **Do NOT skip steps** — if a tool is already installed, confirm version and move on
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
 - **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (`winget`) since Git Bash isn't installed yet.
-- **NEVER modify files directly inside cloned ADO repositories** — any local configuration override must use dedicated override files (e.g. `docker-compose.override.yml`, `appsettings.Local.json`) that are already listed in `.gitignore`. This preserves the ability to commit and pull without conflicts.
+- **🚫 NEVER modify any git-tracked file inside the 5 cloned ADO repositories.** This includes `.npmrc`, `appsettings.json`, `docker-compose.yml`, `package.json`, or ANY other file tracked by git. Always verify with `git status` before touching a file. For local overrides, use ONLY files already listed in `.gitignore` (e.g. `docker-compose.override.yml`, `appsettings.Local.json`, `appsettings.Development.json` if gitignored). Credentials and local config belong in **user-level files** (`~/.npmrc`, `~/.nuget/NuGet/NuGet.Config`) — never in repo files.
 
 ## CONTEXT
 The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
@@ -63,7 +63,7 @@ If detection fails, ask the user to confirm the path.
 
 ### 0c — Ask installation directory
 Ask the user with a multiple-choice question:
-- **A**: Use **this repo as parent** — repos will be cloned inside `amelio-team-hub/REPOs/Amelio_FullStack/` (recommended — single root, everything in one place)
+- **A**: Use **this repo as parent** — repos will be cloned inside `amelio-team-hub/REPOs/` (recommended — single root, everything in one place)
 - **B**: Create a separate `~/Amelio_primary` folder — repos cloned there, team-hub stays independent
 - **C**: Install in a different folder (I will specify the path)
 
@@ -86,7 +86,7 @@ Store variables:
 - `HOME_DIR` = `$HOME` (macOS/Linux) or `$env:USERPROFILE` (Windows)
 - `INSTALL_MODE` = `team-hub-parent` (A) or `separate` (B/C)
 - `AMELIO_DIR` = `TEAM_DIR` if mode A, else user's chosen path (default: `${HOME_DIR}/Amelio_primary`)
-- `FS_DIR` = `${AMELIO_DIR}/REPOs/Amelio_FullStack`
+- `FS_DIR` = `${AMELIO_DIR}/REPOs`
 - `TEAM_DIR` = auto-detected bundle path
 - `CFG_DIR` = `${TEAM_DIR}/config-files`
 
@@ -137,7 +137,7 @@ Present a summary and ask for confirmation:
 >
 > If mode is `team-hub-parent`, also display:
 > - Team Hub repo: [TEAM_DIR]
-> - Repos will be cloned inside: [TEAM_DIR]/REPOs/Amelio_FullStack/
+> - Repos will be cloned inside: [TEAM_DIR]/REPOs/
 > - `.gitignore` already excludes `REPOs/` and `DB_Freemium/`
 >
 > **Ready to start?**
@@ -302,17 +302,19 @@ The `REPOs/` and `DB_Freemium/` directories will be created **inside** the team-
 **If `INSTALL_MODE` = `separate`**: `AMELIO_DIR` = `~/Amelio_primary` (or custom path).
 
 ```bash
-mkdir -p "${AMELIO_DIR}/REPOs/Amelio_FullStack"
-mkdir -p "${AMELIO_DIR}/REPOs/Documentations"
-mkdir -p "${AMELIO_DIR}/REPOs/WorkSpace"
+mkdir -p "${AMELIO_DIR}/REPOs"
+mkdir -p "${AMELIO_DIR}/Documentations"
+mkdir -p "${AMELIO_DIR}/WorkSpace"
 mkdir -p "${AMELIO_DIR}/DB_Freemium"
 ```
 
+> **Layout note**: `Documentations/` and `WorkSpace/` are created **at the root of `AMELIO_DIR`** (beside `windsurf/`, `REPOs/`, etc.) — NOT inside `REPOs/`. The 5 cloned repos go directly inside `REPOs/` with no intermediate subfolder.
+
 On Windows (PowerShell):
 ```powershell
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\REPOs\Amelio_FullStack"
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\REPOs\Documentations"
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\REPOs\WorkSpace"
+New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\REPOs"
+New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\Documentations"
+New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\WorkSpace"
 New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
 ```
 
@@ -673,30 +675,34 @@ Tell user:
 
 ### 8a — Azure DevOps npm authentication (for @amelio packages)
 
-> **macOS note**: `vsts-npm-auth` does not work on macOS. Use the manual approach below.
+> **🚫 NEVER modify the `.npmrc` files inside the cloned repos** — they are git-tracked. The repo `.npmrc` files already declare the correct registry URL. Credentials must go in the **user-level `~/.npmrc`** only.
 
-For **both** `amelio-ui-library` and `amelio-performance-fe`, write the `.npmrc` auth block:
+Add ADO credentials to the global `~/.npmrc` (created if it doesn't exist):
 
 ```bash
-# Compute B64 = base64("anything:PAT") — note: username MUST be included
+# Compute B64 = base64("anything:PAT") — username MUST be included before the colon
 B64=$(echo -n "anything:${ADO_PAT}" | base64)
 
-for REPO in amelio-ui-library amelio-performance-fe; do
-  NPMRC="${FS_DIR}/${REPO}/.npmrc"
-  cat > "$NPMRC" << EOF
-registry=https://registry.npmjs.org/
-
-@amelio:registry=https://pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/
-always-auth=true
+cat >> "${HOME}/.npmrc" << EOF
 //pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:username=anything
 //pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_password=${B64}
-//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=${USERNAME}@amelio.co
+//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=${GIT_EMAIL}
 EOF
-done
-echo "npm auth configured"
+echo "Global ~/.npmrc updated"
 ```
 
-> **Critical**: The `_password` value must be `base64("anything:PAT")` — NOT `base64(":PAT")` and NOT the raw PAT. The `username` field in the `.npmrc` must match the prefix used in the base64 encoding.
+On Windows (PowerShell):
+```powershell
+$B64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("anything:$env:ADO_PAT"))
+Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:username=anything"
+Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_password=$B64"
+Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=$env:GIT_EMAIL"
+Write-Host "Global ~/.npmrc updated"
+```
+
+> **Why `~/.npmrc` and not the repo `.npmrc`?** npm/yarn automatically merges the user-level `~/.npmrc` with the project-level `.npmrc`. Credentials in `~/.npmrc` apply to all projects without polluting git history. The repo `.npmrc` only declares the registry URL — that is already committed and must not be modified.
+
+> **B64 formula**: `_password` = `base64("anything:PAT")` — NOT `base64(":PAT")` and NOT the raw PAT.
 
 ### 8b — UI Library (install + build — REQUIRED before Performance FE)
 ```bash
@@ -888,7 +894,7 @@ Modifications to apply:
 
 **IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
 ```bash
-WORKSPACE_FILE="${AMELIO_DIR}/REPOs/WorkSpace/${CHOSEN_NAME}.code-workspace"
+WORKSPACE_FILE="${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace"
 if [ -f "$WORKSPACE_FILE" ]; then
   echo "ERROR: File already exists: $WORKSPACE_FILE"
   echo "Choose a different name to avoid overwriting."
@@ -899,7 +905,7 @@ fi
 
 If the file already exists, ask the user to choose a different name before proceeding.
 
-Save as `${AMELIO_DIR}/REPOs/WorkSpace/${CHOSEN_NAME}.code-workspace`.
+Save as `${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace`.
 
 Tell user:
 > Your personalized workspace is ready! To open it:
@@ -948,9 +954,9 @@ Ask the user:
 
 If A, create a second directory and clone the same 5 ADO repos:
 ```bash
-mkdir -p "${HOME_DIR}/Amelio_secondary/REPOs/Amelio_FullStack"
+mkdir -p "${HOME_DIR}/Amelio_secondary/REPOs"
 ADO="https://${ADO_PAT}@dev.azure.com/ameliodev"
-FS2="${HOME_DIR}/Amelio_secondary/REPOs/Amelio_FullStack"
+FS2="${HOME_DIR}/Amelio_secondary/REPOs"
 git clone "${ADO}/Amelio%20-%20First%20Product/_git/Amelio%20-%20Back-End" "${FS2}/Amelio - Back-End"
 git clone "${ADO}/Amelio%20-%20First%20Product/_git/Amelio%20-%20React" "${FS2}/Amelio - React"
 git clone "${ADO}/Amelio-Performance%20Management/_git/amelio-performance-backend" "${FS2}/amelio-performance-backend"
@@ -960,7 +966,7 @@ git clone "${ADO}/Amelio-Development%20Packages/_git/amelio-ui-library" "${FS2}/
 
 On Windows (PowerShell):
 ```powershell
-$FS2 = "${HOME_DIR}/Amelio_secondary/REPOs/Amelio_FullStack"
+$FS2 = "${HOME_DIR}/Amelio_secondary/REPOs"
 New-Item -ItemType Directory -Force -Path $FS2
 $ADO = "https://${ADO_PAT}@dev.azure.com/ameliodev"
 git clone "$ADO/Amelio%20-%20First%20Product/_git/Amelio%20-%20Back-End" "$FS2/Amelio - Back-End"
@@ -989,7 +995,7 @@ echo "=== 6. Rules ===" && ls "${HOME_DIR}/.codeium/.windsurf/rules/"
 echo "=== 7. Global Rules ===" && ls "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 echo "=== 8. Skills ===" && ls "${HOME_DIR}/.codeium/windsurf/skills/"
 echo "=== 9. Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflows/" && ls "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" && ls "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
-echo "=== 10. Workspace ===" && ls "${AMELIO_DIR}/REPOs/WorkSpace/Simple_${USERNAME}.code-workspace" 2>&1
+echo "=== 10. Workspace ===" && ls "${AMELIO_DIR}/WorkSpace/" 2>&1
 echo "=== 11. UI Library dist ===" && ls "${FS_DIR}/amelio-ui-library/dist/index.css" 2>&1
 echo "=== 12. Config files ===" && ls "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json" "${FS_DIR}/amelio-performance-fe/.env" "${FS_DIR}/Amelio - React/.env.development" 2>&1
 ```
@@ -1005,7 +1011,7 @@ Write-Host "=== 6. Rules ==="; Get-ChildItem "${HOME_DIR}/.codeium/.windsurf/rul
 Write-Host "=== 7. Global Rules ==="; Test-Path "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 Write-Host "=== 8. Skills ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/skills/" -Name
 Write-Host "=== 9. Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/" -Name
-Write-Host "=== 10. Workspace ==="; Test-Path "${AMELIO_DIR}/REPOs/WorkSpace/Simple_${USERNAME}.code-workspace"
+Write-Host "=== 10. Workspace ==="; Get-ChildItem "${AMELIO_DIR}/WorkSpace/" -Name
 Write-Host "=== 11. UI Library dist ==="; Test-Path "${FS_DIR}/amelio-ui-library/dist/index.css"
 Write-Host "=== 12. Config files ==="; Test-Path "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json"; Test-Path "${FS_DIR}/amelio-performance-fe/.env"; Test-Path "${FS_DIR}/Amelio - React/.env.development"
 ```
