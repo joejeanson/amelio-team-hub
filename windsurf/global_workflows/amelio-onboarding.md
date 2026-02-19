@@ -539,26 +539,36 @@ Start-Process "https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_je
 ```
 
 Ask the user:
-- **A**: The zip has finished downloading to my `Downloads/` folder
+- **A**: The download has finished (zip or folder) — it's in my `Downloads/` folder
 - **B**: I can't access SharePoint right now — skip for now
 
 If B, skip and note that Legacy Backend will have no data on first run.
 
-**Step 2 — Auto-detect and extract the zip:**
+**Step 2 — Auto-detect and move the downloaded content:**
 
-Once the user confirms (A), detect the zip automatically — SharePoint may name it `DB_Freemium.zip` or `DB_Freemium-[timestamp].zip`:
+Once the user confirms (A), detect what was downloaded — SharePoint may deliver either a zip or a folder:
 
 ```bash
 DOWNLOADS="${HOME}/Downloads"
+
+# Case 1: SharePoint delivered a zip (most common when downloading a folder)
 DB_ZIP=$(ls -t "${DOWNLOADS}"/DB_Freemium*.zip 2>/dev/null | head -1)
-if [ -z "$DB_ZIP" ]; then
-  echo "ERROR: No DB_Freemium*.zip found in ~/Downloads/ — check the download completed."
-else
-  echo "Found: ${DB_ZIP}"
-  mkdir -p "${AMELIO_DIR}/DB_Freemium"
+
+# Case 2: SharePoint delivered the folder directly
+DB_FOLDER=$(ls -dt "${DOWNLOADS}"/DB_Freemium* 2>/dev/null | grep -v '\.zip' | head -1)
+
+if [ -n "$DB_ZIP" ]; then
+  echo "Found zip: ${DB_ZIP}"
   unzip -o "${DB_ZIP}" -d "${AMELIO_DIR}"
   rm "${DB_ZIP}"
-  echo "Extracted to ${AMELIO_DIR}/DB_Freemium/"
+  echo "Extracted to ${AMELIO_DIR}/"
+elif [ -n "$DB_FOLDER" ]; then
+  echo "Found folder: ${DB_FOLDER}"
+  mkdir -p "${AMELIO_DIR}/DB_Freemium"
+  cp -R "${DB_FOLDER}/." "${AMELIO_DIR}/DB_Freemium/"
+  echo "Copied to ${AMELIO_DIR}/DB_Freemium/"
+else
+  echo "ERROR: No DB_Freemium zip or folder found in ~/Downloads/ — check the download completed."
 fi
 ```
 
@@ -566,14 +576,20 @@ On Windows (PowerShell):
 ```powershell
 $downloads = "$env:USERPROFILE\Downloads"
 $dbZip = Get-ChildItem "$downloads\DB_Freemium*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-if (-not $dbZip) {
-  Write-Host "ERROR: No DB_Freemium*.zip found in Downloads — check the download completed."
-} else {
-  Write-Host "Found: $($dbZip.FullName)"
-  New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
+$dbFolder = Get-ChildItem "$downloads" -Directory | Where-Object { $_.Name -like "DB_Freemium*" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+
+if ($dbZip) {
+  Write-Host "Found zip: $($dbZip.FullName)"
   Expand-Archive -Path $dbZip.FullName -DestinationPath "${AMELIO_DIR}" -Force
   Remove-Item $dbZip.FullName
-  Write-Host "Extracted to ${AMELIO_DIR}\DB_Freemium\"
+  Write-Host "Extracted to ${AMELIO_DIR}\"
+} elseif ($dbFolder) {
+  Write-Host "Found folder: $($dbFolder.FullName)"
+  New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
+  Copy-Item "$($dbFolder.FullName)\*" "${AMELIO_DIR}\DB_Freemium\" -Recurse -Force
+  Write-Host "Copied to ${AMELIO_DIR}\DB_Freemium\"
+} else {
+  Write-Host "ERROR: No DB_Freemium zip or folder found in Downloads — check the download completed."
 }
 ```
 
@@ -581,7 +597,7 @@ Verify the dump is in place:
 ```bash
 ls "${AMELIO_DIR}/DB_Freemium/Freemium/" | head -5
 ```
-Expected: `.bson.gz` and `.metadata.json.gz` files. If the folder structure is different (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust `DB_PATH` in the next step accordingly.
+Expected: `.bson.gz` and `.metadata.json.gz` files. If the structure differs (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust `DB_PATH` in the next step accordingly.
 
 **Step 3 — Import into MongoDB:**
 
