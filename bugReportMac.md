@@ -190,6 +190,41 @@
 - **Fix applied**: Step 10 updated — always asks user to choose filename, never uses `Simple_`/`Template_` prefix, checks for existing file before writing
 - **Workflow fix**: Step 10 corrected in `amelio-onboarding.md`
 
+### 25. Performance FE — `npm install` au lieu de `yarn install` (régression session 2026-02-19)
+- **Error**: N/A — mauvaise commande dans le workflow
+- **Root cause**: Le workflow Step 8c avait été corrigé pour utiliser `npm install` (Bug #24), mais cette machine utilise bien `yarn install` pour Performance FE. La note sur `npm install` était incorrecte — `yarn install` fonctionne correctement sur cette machine avec `~/.npmrc` configuré
+- **Fix applied**: Step 8c réécrit — `yarn install` (pas `npm install`), suppression de la note erronée sur npm, ajout de `--legacy-peer-deps` retiré (non nécessaire avec yarn)
+- **Workflow fix**: Step 8c corrigé dans `amelio-onboarding.md` — `yarn install` + `echo` de confirmation
+
+### 26. Performance FE — `npx tsx` bloque le terminal interactivement
+- **Error**: `Need to install the following packages: tsx@4.21.0 — Ok to proceed? (y)` — bloque le terminal en attente de saisie
+- **Cause**: `npm run dev` appelle `yarn translation:gen` qui lance `npx tsx scripts/generate-i18n-keys.ts`. Si `tsx` n'est pas installé globalement, `npx` demande confirmation interactive
+- **Fix applied**: `npm install -g tsx` avant `npm run dev` / `yarn install`
+- **Workflow fix**: Step 8c — pré-requis `npm install -g tsx` ajouté avant `yarn install`
+
+### 27. Nom du conteneur PostgreSQL incorrect dans la checklist finale
+- **Error**: `docker exec dev_db ...` échoue — conteneur introuvable
+- **Cause**: Le nom réel du conteneur est `performance_management-dev_db-1` (généré par docker-compose), pas `dev_db`
+- **Fix applied**: Step 13 corrigé dans `amelio-onboarding.md`
+- **Workflow fix**: `docker exec dev_db` → `docker exec performance_management-dev_db-1` dans Step 13 (bash + PowerShell)
+
+### 28. Git-tracked appsettings modifiés sans stash — repos pollués
+- **Error**: N/A — process error
+- **Cause**: Le workflow Step 7b modifiait directement les 3 fichiers `appsettings.json` git-trackés dans `Amelio - Back-End` sans créer de stash, laissant les repos dans un état dirty permanent
+- **Fix applied**:
+  1. Step 7b entièrement réécrit — utilise `sed` pour les modifications + `git stash push` immédiat après
+  2. Deux stashs nommés créés à la fin de l'onboarding (Step 13) :
+     - `⚙️ Setup local — connexions MongoDB localhost (onboarding)` — référence permanente
+     - `🚀▶️ Running local — connexions MongoDB prêtes à démarrer` — à pop avant de démarrer les services, re-stasher après
+  3. Instructions d'utilisation quotidienne documentées dans Step 13
+- **Workflow fix**: Step 7b et Step 13 corrigés dans `amelio-onboarding.md`
+
+### 29. Smoke tests absents de la checklist finale
+- **Error**: N/A — lacune du workflow
+- **Cause**: Le workflow ne vérifiait pas que les services démarrent réellement après l'onboarding
+- **Fix applied**: Section "Smoke tests" ajoutée dans Step 13 — teste les 5 services (IdentityServer, Legacy API, Performance API, Legacy FE, Performance FE) avec stash pop/push autour des tests Legacy Backend
+- **Workflow fix**: Step 13 — section smoke tests ajoutée, checklist étendue à 13 points
+
 ---
 
 ## 🧪 RÉSULTATS DES TESTS — Session 2026-02-19
@@ -230,6 +265,53 @@
 
 ---
 
+## 🧪 RÉSULTATS DES TESTS — Session 2026-02-19 (machine `devtest2`)
+
+> Tests exécutés sur machine `devtest2` (macOS, Apple Silicon, Mac Mini) — onboarding complet de A à Z.
+
+### T9 — Git stash appsettings Legacy Backend (Bug #28) ✅ VALIDÉ
+- [x] `sed` appliqué sur 3 fichiers `appsettings.json` — connexions MongoDB → `localhost:27017`
+- [x] `git stash push -m "⚙️ Setup local..."` : stash créé, `git status` vide
+- [x] `git stash pop` + `dotnet run` IdentityServer : **HTTP 200** sur `http://localhost:5000/.well-known/openid-configuration`
+- [x] `git stash pop` + `dotnet run` OPIA.API.V2 : **`Now listening on: http://localhost:18489`**
+- [x] Deux stashs nommés créés en fin d'onboarding : `⚙️ Setup local` + `🚀▶️ Running local`
+
+### T10 — PostgreSQL migrations (Bug #27) ✅ VALIDÉ
+- [x] Conteneur réel : `performance_management-dev_db-1` (pas `dev_db`)
+- [x] `npm run update-database` : **2 migrations appliquées** (`20251002031637_Initial`, `20260129161333_AddPerformanceModels`)
+- [x] `docker exec performance_management-dev_db-1 psql ...` : **32 tables** dans `public`
+
+### T11 — Performance FE yarn install + tsx (Bugs #25 + #26) ✅ VALIDÉ
+- [x] `npm install -g tsx` : installé globalement
+- [x] `yarn install` dans `amelio-performance-fe` : **succès** (pas de prompt interactif)
+- [x] `npm run dev` : **`VITE v7.3.1 ready in 536 ms — http://localhost:5173/`**
+- [x] `git status` après install : **vide** (aucun fichier git-tracké modifié)
+
+### T12 — Smoke tests 5 services ✅ VALIDÉ
+- [x] **IdentityServer** (port 5000) : HTTP 200 sur `/.well-known/openid-configuration`
+- [x] **Legacy API OPIA.API.V2** (port 18489) : `Now listening on: http://localhost:18489`
+- [x] **Performance Backend** (port 5120) : `Now listening on: http://localhost:5120`
+- [x] **Legacy Frontend** (port 3011) : `➜ Local: http://localhost:3011/`
+- [x] **Performance Frontend** (port 5173) : `VITE v7.3.1 ready — http://localhost:5173/`
+
+### T13 — Extensions Windsurf (Step 9) ✅ VALIDÉ
+- [x] 23 extensions essentielles installées (tier A)
+- [x] 4 extensions visuelles installées (tier B)
+- [x] Total : **27/27 OK, 0 FAILED**
+- [x] Binary résolu : `/Applications/Windsurf.app/Contents/Resources/app/bin/windsurf`
+
+### T14 — Workspace personnalisé (Step 10) ✅ VALIDÉ
+- [x] `Amelio_devtest2.code-workspace` généré dans `WorkSpace/`
+- [x] `path: ".."` correct pour le dossier Team Hub
+- [x] Toutes les entrées `<AMELIO_DIR>` remplacées par `/Users/devtest2/Downloads/amelio-team-hub`
+
+### T15 — MongoDB Freemium (Step 6a) ✅ VALIDÉ
+- [x] `mongorestore` : **121 collections** importées dans `Freemium`
+- [x] Chemin correct : `DB_Freemium/Freemium/Freemium/` (structure imbriquée)
+- [x] `mongosh` : **121 collections** confirmées
+
+---
+
 ## 🔍 AUDIT WORKFLOW — Session 2026-02-19
 
 > Audit complet de `amelio-onboarding.md` après corrections. Chaque step vérifié contre la machine `devtest`.
@@ -267,5 +349,127 @@
 - Step 8c : `npm install` au lieu de `yarn install` (Yarn 1.x ignore les scoped ADO registries)
 - `.env.development` dans `Amelio - React` reverté (avait été écrasé par une session précédente)
 - Tous les repos validés propres : 5/5 `git status` vide
+
+---
+
+## 🔍 AUDIT WORKFLOW — Session 2026-02-19 (machine `devtest2`)
+
+> Audit complet de `amelio-onboarding.md` après corrections de la session `devtest2`. Chaque step vérifié sur machine fraîche.
+
+| Step | Statut | Notes |
+|---|---|---|
+| 0a–0e | ✅ | PAT chargé depuis `.env`, résumé correct |
+| 1a–1e | ✅ | Tous outils présents, `dotnet-ef` installé, PATH `~/.dotnet/tools` configuré |
+| 2 | ✅ | Structure `AMELIO_DIR/REPOs/`, `WorkSpace/`, `Documentations/` correcte |
+| 3 | ✅ | 5 repos clonés avec succès |
+| 4a–4e | ✅ | Rules, memories, skills, workflows déployés dans `~/.codeium/windsurf/` |
+| 5a–5d | ✅ | 5 containers Docker up (mongo, pg×2, redis, mailpit) |
+| 6a | ✅ | 121 collections importées — chemin `DB_Freemium/Freemium/Freemium/` (structure imbriquée) |
+| 6b | ✅ | 2 migrations PostgreSQL appliquées, 32 tables dans `public` |
+| 7a | ✅ | `appsettings.Development.json` + `appsettings.Testing.json` déployés |
+| 7b | ✅ (réécrit) | `sed` + `git stash push` — 3 fichiers modifiés, repo propre immédiatement |
+| 7c | ✅ | `NUGET_PACKAGES` + NuGet.Config user-level |
+| 7d | ✅ | `.env.development` déjà présent, non touché |
+| 7e | ✅ | `.env` déployé depuis template |
+| 8a | ✅ | `~/.npmrc` avec `_authToken` |
+| 8b | ✅ | `yarn install` + `yarn build` UI Library — `dist/` créé |
+| 8c | ✅ (corrigé) | `npm install -g tsx` + `yarn install` — Vite démarre sur port 5173 |
+| 8d | ✅ | `dotnet restore` Performance Backend |
+| 8e | ✅ | `npm ci --legacy-peer-deps` Legacy Frontend — `package-lock.json` non modifié |
+| 8f | ✅ | `dotnet restore` Legacy Backend — warnings NU1701 non-bloquants |
+| 9 | ✅ | 27 extensions installées (tier B) — binary `/Applications/Windsurf.app/.../windsurf` |
+| 10 | ✅ | `Amelio_devtest2.code-workspace` généré |
+| 11 | ✅ | Bookmarks + URLs locales + Bruno + DBeaver installés |
+| 12 | ✅ | Workspace secondaire passé |
+| 13 | ✅ (étendu) | Checklist 13 points + smoke tests 5 services + 2 stashs nommés |
+
+**Corrections appliquées lors de la session `devtest2`** :
+- Step 7b : `sed` + `git stash push` (au lieu de modification directe sans stash) — Bug #28
+- Step 8c : `yarn install` (pas `npm install`) + pré-requis `npm install -g tsx` — Bugs #25 + #26
+- Step 13 : `performance_management-dev_db-1` (pas `dev_db`) — Bug #27
+- Step 13 : section smoke tests ajoutée (5 services testés) — Bug #29
+- Step 13 : 2 stashs nommés (`⚙️ Setup local` + `🚀▶️ Running local`) + instructions quotidiennes
+- Step 11 : vérification préalable `brew list --cask` avant de proposer l'installation
+- Step 11 : offre d'aide pour configuration des outils (strings de connexion) avec chaînage entre les outils
+
+---
+
+## 🔍 AUDIT QUALITÉ — Post-session `devtest2`
+
+> Audit complet du workflow après la session `devtest2`. Corrections supplémentaires identifiées et appliquées.
+
+### 30. Step 8f — `dotnet restore` ne nécessite pas les `appsettings.json`
+- **Erreur** : Le workflow indiquait de faire `stash pop` avant `dotnet restore` et `stash push` après
+- **Cause** : Hypothèse incorrecte — `dotnet restore` ne lit que les `.csproj` et `NuGet.Config`, jamais les `appsettings.json`
+- **Fix applied** : Step 8f simplifié — `dotnet restore` direct, sans stash pop/push
+- **Workflow fix** : Step 8f corrigé dans `amelio-onboarding.md`
+
+### 31. Step 13 — Smoke test `stash pop` sans garde-fou
+- **Erreur** : `git stash pop` échouait si le stash avait déjà été poppé (ex: après Step 8f dans l'ancienne version)
+- **Fix applied** : Ajout d'un `if grep -q "Setup local"` avant le `stash pop` — pop uniquement si le stash existe
+- **Workflow fix** : Step 13 smoke tests — stash pop conditionnel
+
+### 32. Step 13 — Smoke test Performance FE : `npm run dev` au lieu de `yarn dev`
+- **Erreur** : `npm run dev` dans le smoke test alors que Performance FE utilise `yarn`
+- **Fix applied** : `yarn dev` dans le smoke test Performance FE
+- **Workflow fix** : Step 13 smoke test Performance FE corrigé
+
+### 33. Step 6b — Migrations PostgreSQL exécutées avant le déploiement de `appsettings.Development.json`
+- **Erreur** : Step 6b (migrations) était positionné AVANT Step 7a (déploiement config) dans le workflow, causant `ConnectionString property has not been initialized`
+- **Fix applied** :
+  - Step 6b remplacé par un renvoi explicite vers Step 7a-bis
+  - Step 7a-bis créé juste après Step 7a — migrations exécutées immédiatement après le déploiement de la config
+- **Workflow fix** : Step 6b → renvoi, Step 7a-bis → migrations déplacées au bon endroit
+
+### 34. Step 7b stash — `--include-untracked` sur des fichiers trackés
+- **Erreur** : `git stash push --include-untracked` utilisé sur des fichiers git-trackés (`appsettings.json`)
+- **Cause** : `--include-untracked` est pour les fichiers non-trackés. Sur des fichiers trackés, il est inutile et peut stasher des fichiers non désirés
+- **Fix applied** : `--include-untracked` retiré du `git stash push` dans Step 7b
+- **Workflow fix** : Step 7b corrigé dans `amelio-onboarding.md`
+
+### 35. Step 8a — `cat >` écrase `~/.npmrc` existant
+- **Erreur** : `cat > "${HOME}/.npmrc"` écrase tout le fichier, supprimant les entrées existantes d'autres registries
+- **Fix applied** : Remplacé par une logique `grep + sed/append` — met à jour l'entrée ADO si elle existe, l'ajoute sinon
+- **Workflow fix** : Step 8a corrigé (bash + Windows Git Bash)
+
+### 36. Step 1b — `$PATH` dotnet tools : `${USERNAME}` dans guillemets simples
+- **Erreur** : `echo 'export PATH="$PATH:/Users/${USERNAME}/.dotnet/tools"'` — `${USERNAME}` est une variable Cascade, pas shell. Dans des guillemets simples, elle est écrite littéralement dans `~/.zprofile`, donnant un PATH invalide
+- **Fix applied** : `${USERNAME}` → `$HOME` : `echo 'export PATH="$PATH:$HOME/.dotnet/tools"'`
+- **Workflow fix** : Step 1b corrigé dans `amelio-onboarding.md`
+
+### 37. Step 5d — Noms de conteneurs Docker incorrects dans la note
+- **Erreur** : `Expected: 5 containers running (amelio_mongodb, dev_db, test_db, dev_cache, mailpit)` — les vrais noms générés par docker-compose sont `performance_management-dev_db-1`, etc.
+- **Fix applied** : Note remplacée par la liste complète des vrais noms de conteneurs
+- **Workflow fix** : Step 5d corrigé dans `amelio-onboarding.md`
+
+### 38. Step 7c — NuGet.Config généré sans commande concrète
+- **Erreur** : Le workflow disait "Read the template... replace... Save" sans donner de commande — Cascade devait deviner
+- **Fix applied** : Commandes `sed` explicites ajoutées pour macOS et Windows Git Bash
+- **Workflow fix** : Step 7c Part 2 corrigé dans `amelio-onboarding.md`
+
+### 39. Step 7c — `mkdir` et `cat` NuGet utilisaient `HOME_DIR` au lieu de `HOME`
+- **Erreur** : `mkdir -p "${HOME_DIR}/.nuget/NuGet"` et `cat "${HOME_DIR}/.nuget/NuGet/NuGet.Config"` — `HOME_DIR` est une variable Cascade, pas shell
+- **Fix applied** : `HOME_DIR` → `HOME` dans les blocs bash de Step 7c
+- **Workflow fix** : Step 7c corrigé dans `amelio-onboarding.md`
+
+### 40. Step 8f — `NUGET_PACKAGES` utilisait `HOME_DIR` au lieu de `HOME`
+- **Erreur** : `export NUGET_PACKAGES="${HOME_DIR}/.nuget/packages"` — `HOME_DIR` n'est pas une variable shell
+- **Fix applied** : `HOME_DIR` → `HOME` dans Step 7c Part 1 et Step 13 smoke test IdentityServer
+- **Workflow fix** : Steps 7c et 13 corrigés dans `amelio-onboarding.md`
+
+### 41. Step 12 — Secondary workspace utilisait `HOME_DIR` au lieu de `HOME`/`$env:USERPROFILE`
+- **Erreur** : `mkdir -p "${HOME_DIR}/Amelio_secondary"` (bash) et `$FS2 = "${HOME_DIR}/..."` (PowerShell)
+- **Fix applied** : bash → `$HOME`, PowerShell → `$env:USERPROFILE`
+- **Workflow fix** : Step 12 corrigé dans `amelio-onboarding.md`
+
+### 42. Step 8f — NuGet workaround utilisait `HOME_DIR` au lieu de `HOME`
+- **Erreur** : `mkdir -p "${HOME_DIR}/.nuget/packages/amelio.mongorepository/2.1.3"` dans le workaround NU1202
+- **Fix applied** : `HOME_DIR` → `HOME`
+- **Workflow fix** : Step 8f workaround corrigé dans `amelio-onboarding.md`
+
+### 43. Step 8g — `bin/` Performance Backend inexistant après `dotnet restore`
+- **Erreur** : `ls "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/bin/"` — ce dossier n'existe qu'après `dotnet build`, pas `dotnet restore`
+- **Fix applied** : Remplacé par `find ... -name "project.assets.json" | wc -l` (même correction que pour Legacy BE)
+- **Workflow fix** : Step 8g corrigé dans `amelio-onboarding.md` (bash + PowerShell)
 
 
