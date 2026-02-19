@@ -9,7 +9,7 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **ALWAYS use multiple-choice questions** when user input is needed — never open-ended
 - **Task is NEVER complete** until the user explicitly confirms — keep asking after final step
 - **On error**: show the error, propose 2-3 fix options, let user choose, then continue
-- **Chat in French**, all generated files/code/configs in **English**
+- **Chat in the language chosen by the user in Step 0a** (`CHAT_LANG`), all generated files/code/configs in **English**
 - **Do NOT skip steps** — if a tool is already installed, confirm version and move on
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
 
@@ -24,11 +24,19 @@ All source files (skills, workflows, rules, extensions lists, workspace template
 
 ## Step 0 — Welcome & Interactive Setup
 
-### 0a — Welcome message
-Display a welcome message (in the user's chat language per BEHAVIOR RULES):
-> Welcome to Amelio onboarding! I will configure your complete development environment.
+### 0a — Welcome message & language choice
+Display a welcome message in **English** first, then immediately ask the user to choose their preferred chat language:
+
+> 👋 Welcome to Amelio onboarding! I will configure your complete development environment.
 > This includes: system tools, 5 repos, Docker, databases, IDE config, and project setup.
-> Before we start, I need a few pieces of information.
+
+Ask with a multiple-choice question:
+- **A**: 🇫🇷 Français — Continuer en français
+- **B**: 🇬🇧 English — Continue in English
+- **C**: 🌍 Other — I'll specify my preferred language
+
+Store the user's choice as `CHAT_LANG`. From this point on, **all chat messages** must be in the chosen language.
+Code, configs, comments, and generated files remain in **English** regardless of the chat language.
 
 ### 0b — Detect OS, user, and Team Hub location
 // turbo
