@@ -2,6 +2,7 @@
 
 > Self-contained repo for onboarding Amelio developers.
 > Installs everything: tools, repos, Docker, databases, configs, IDE, and workspace.
+> Can also serve as the **parent directory** — all repos cloned inside, single root for everything.
 
 ## Quick Start
 
@@ -13,6 +14,56 @@
 6. Follow the 13 guided steps (~30-45 minutes for a fresh machine)
 
 > ℹ️ After onboarding, the workflow is deployed to your system — you can then invoke it with `/amelio-onboarding`.
+
+## Installation Modes
+
+The onboarding offers **two installation modes**:
+
+### Mode A — Team Hub as Parent (recommended)
+
+The repos are cloned **inside** this repository. `amelio-team-hub` becomes the single root directory for the entire Amelio workspace.
+
+```
+amelio-team-hub/                  <- this repo = AMELIO_DIR
+├── README.md
+├── setup.sh
+├── config-files/
+├── windsurf/
+├── REPOs/                        <- gitignored
+│   ├── Amelio_FullStack/
+│   │   ├── Amelio - Back-End/
+│   │   ├── Amelio - React/
+│   │   ├── amelio-performance-backend/
+│   │   ├── amelio-performance-fe/
+│   │   └── amelio-ui-library/
+│   ├── Documentations/
+│   └── WorkSpace/
+└── DB_Freemium/                  <- gitignored
+```
+
+- One `git clone` + onboarding = everything set up
+- `REPOs/` and `DB_Freemium/` are in `.gitignore` — they never pollute team-hub history
+- Easy to relocate: move the whole folder and everything follows
+
+### Mode B — Separate `Amelio_primary` directory
+
+Classic layout: repos are cloned into `~/Amelio_primary/` (or a custom path). The team-hub repo stays as a standalone config bundle.
+
+```
+~/Amelio_primary/                 <- AMELIO_DIR
+├── REPOs/
+│   ├── Amelio_FullStack/
+│   │   ├── Amelio - Back-End/
+│   │   └── ...
+│   ├── Documentations/
+│   └── WorkSpace/
+└── DB_Freemium/
+
+~/amelio-team-hub/                <- separate, standalone
+├── config-files/
+├── windsurf/
+└── ...
+```
 
 For manual updates only:
 ```bash
@@ -79,10 +130,12 @@ For manual updates only:
 ## Bundle Structure
 
 ```
-Team/
+amelio-team-hub/                          <- this repo (= AMELIO_DIR in parent mode)
 ├── README.md
+├── GETTING-STARTED.md
 ├── TESTING-GUIDE.md                      <- How to test the onboarding
 ├── setup.sh                              <- Manual installer (bash)
+├── .gitignore                            <- Excludes REPOs/ and DB_Freemium/
 ├── config-files/
 │   ├── README.md
 │   ├── performance-backend/
@@ -99,24 +152,37 @@ Team/
 │   ├── extensions-team.txt
 │   ├── extensions-optional.txt
 │   └── extensions-extras.txt
-└── windsurf/
-    ├── skills/
-    │   ├── skill-creator/                -> ~/.codeium/windsurf/skills/
-    │   └── code-quality-audit/           -> ~/.codeium/windsurf/skills/
-    ├── global_workflows/
-    │   ├── amelio-onboarding.md          <- THE orchestrator workflow (13 steps)
-    │   ├── create-perfo-fe-pr.md         -> repo .windsurf/workflows/
-    │   └── create-perfo-be-pr.md         -> repo .windsurf/workflows/
-    ├── rules/
-    │   ├── backend-dotnet.md             -> ~/.codeium/.windsurf/rules/
-    │   ├── frontend-react.md
-    │   ├── frontend-styling.md
-    │   ├── general-devops.md
-    │   └── testing.md
-    ├── memories/
-    │   └── global_rules.md               -> ~/.codeium/windsurf/memories/
-    └── workspace/
-        └── Simple.code-workspace         <- Template (paths replaced at install)
+├── windsurf/
+│   ├── skills/
+│   │   ├── skill-creator/                -> ~/.codeium/windsurf/skills/
+│   │   └── code-quality-audit/           -> ~/.codeium/windsurf/skills/
+│   ├── global_workflows/
+│   │   ├── amelio-onboarding.md          <- THE orchestrator workflow (13 steps)
+│   │   ├── create-perfo-fe-pr.md         -> repo .windsurf/workflows/
+│   │   └── create-perfo-be-pr.md         -> repo .windsurf/workflows/
+│   ├── rules/
+│   │   ├── backend-dotnet.md             -> ~/.codeium/.windsurf/rules/
+│   │   ├── frontend-react.md
+│   │   ├── frontend-styling.md
+│   │   ├── general-devops.md
+│   │   └── testing.md
+│   ├── memories/
+│   │   └── global_rules.md               -> ~/.codeium/windsurf/memories/
+│   └── workspace/
+│       └── Simple.code-workspace         <- Template (paths replaced at install)
+│
+│  ── Created by onboarding (Mode A: parent) ──────────────────
+├── REPOs/                                <- gitignored
+│   ├── Amelio_FullStack/
+│   │   ├── Amelio - Back-End/
+│   │   ├── Amelio - React/
+│   │   ├── amelio-performance-backend/
+│   │   ├── amelio-performance-fe/
+│   │   └── amelio-ui-library/
+│   ├── Documentations/
+│   └── WorkSpace/
+│       └── Simple_<user>.code-workspace
+└── DB_Freemium/                          <- gitignored
 ```
 
 ## How the Onboarding Works (13 Steps)
@@ -125,7 +191,7 @@ Team/
 |------|------|-------------|
 | 0 | Welcome & Setup | Detects OS, asks for install path and ADO PAT |
 | 1 | System Dependencies | Validates and installs node, yarn, npm, git, dotnet, docker, mongosh |
-| 2 | Directory Structure | Creates `Amelio_primary/REPOs/Amelio_FullStack/` |
+| 2 | Directory Structure | Creates `REPOs/Amelio_FullStack/` inside chosen root (team-hub or `Amelio_primary`) |
 | 3 | Clone Repos | Clones 5 Azure DevOps repos |
 | 4 | Deploy Windsurf Config | Rules, skills, global rules, workflows |
 | 5 | Docker Containers | MongoDB + PostgreSQL + Redis + Mailpit |

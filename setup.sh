@@ -159,15 +159,24 @@ WS_TEMPLATE="$SOURCE/workspace/Simple.code-workspace"
 if [[ -f "$WS_TEMPLATE" ]]; then
     echo -e "${BLUE}📦 Workspace${NC}"
     WS_USER=$(whoami)
-    WS_OUTPUT="$HOME/Amelio_primary/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
 
-    if [[ "$MODE" == "install" ]]; then
-        mkdir -p "$(dirname "$WS_OUTPUT")"
+    # Detect install mode: if REPOs/ exists inside team-hub, it's parent mode
+    if [[ -d "$SCRIPT_DIR/REPOs" ]]; then
+        AMELIO_DIR="$SCRIPT_DIR"
+        WS_OUTPUT="$SCRIPT_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
+        echo -e "   ${BLUE}├─ Mode: team-hub as parent${NC}"
+    else
         if [[ "$(uname)" == "Darwin" ]]; then
             AMELIO_DIR="/Users/${WS_USER}/Amelio_primary"
         else
             AMELIO_DIR="/home/${WS_USER}/Amelio_primary"
         fi
+        WS_OUTPUT="$AMELIO_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
+        echo -e "   ${BLUE}├─ Mode: separate Amelio_primary${NC}"
+    fi
+
+    if [[ "$MODE" == "install" ]]; then
+        mkdir -p "$(dirname "$WS_OUTPUT")"
         sed "s|<AMELIO_DIR>|${AMELIO_DIR}|g" "$WS_TEMPLATE" > "$WS_OUTPUT"
         echo -e "   ${GREEN}├─ Generated: Simple_${WS_USER}.code-workspace${NC}"
     else

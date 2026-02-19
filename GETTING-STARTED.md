@@ -14,6 +14,8 @@
 git clone https://github.com/joejeanson/amelio-team-hub.git
 ```
 
+> This repo can also serve as your **parent directory** for the entire Amelio workspace — the onboarding will ask you to choose.
+
 ## 2. Open the Workspace
 
 Open the file below in **Windsurf IDE**:
@@ -29,6 +31,11 @@ amelio-team-hub/windsurf/workspace/Simple.code-workspace
 1. In the Windsurf sidebar, locate the **Team Hub** folder
 2. Drag the file `windsurf/global_workflows/amelio-onboarding.md` into the **Cascade chat panel**
 3. Cascade reads the workflow and walks you through **13 interactive steps** (~30–45 min)
+
+During the onboarding, you will be asked to choose an **installation mode**:
+
+- **Mode A (recommended)**: Use this repo as the parent — all repos cloned inside `amelio-team-hub/REPOs/`
+- **Mode B**: Create a separate `~/Amelio_primary` folder — classic layout with repos in a dedicated directory
 
 The onboarding handles everything automatically:
 - System dependencies (Node.js, .NET, Docker, etc.)

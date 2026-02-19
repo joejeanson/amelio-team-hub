@@ -54,16 +54,29 @@ If detection fails, ask the user to confirm the path.
 
 ### 0c — Ask installation directory
 Ask the user with a multiple-choice question:
-- **A**: Install in `~/Amelio_primary` (recommended)
-- **B**: Install in a different folder (I will specify the path)
+- **A**: Use **this repo as parent** — repos will be cloned inside `amelio-team-hub/REPOs/Amelio_FullStack/` (recommended — single root, everything in one place)
+- **B**: Create a separate `~/Amelio_primary` folder — repos cloned there, team-hub stays independent
+- **C**: Install in a different folder (I will specify the path)
 
-If B, ask the user to type the absolute path.
+If C, ask the user to type the absolute path.
+
+**Option A behavior (team-hub as parent)**:
+- `AMELIO_DIR` = `TEAM_DIR` (the amelio-team-hub repo root)
+- `REPOs/` and `DB_Freemium/` are already in `.gitignore` — they will NOT pollute the team-hub git history
+- The workspace file will reference paths relative to the team-hub root
+- Advantage: single `git clone` + onboarding = everything is set up, no scattered directories
+
+**Option B/C behavior (separate directory)**:
+- `AMELIO_DIR` = `${HOME_DIR}/Amelio_primary` (or user-specified path)
+- Team-hub repo remains a standalone config bundle
+- Classic layout with repos in a separate directory tree
 
 Store variables:
 - `OS_TYPE` = `Darwin` (macOS) or `Linux` or `Windows_NT`
 - `USERNAME` = result of `whoami`
 - `HOME_DIR` = `$HOME` (macOS/Linux) or `$env:USERPROFILE` (Windows)
-- `AMELIO_DIR` = user's chosen path (default: `${HOME_DIR}/Amelio_primary`)
+- `INSTALL_MODE` = `team-hub-parent` (A) or `separate` (B/C)
+- `AMELIO_DIR` = `TEAM_DIR` if mode A, else user's chosen path (default: `${HOME_DIR}/Amelio_primary`)
 - `FS_DIR` = `${AMELIO_DIR}/REPOs/Amelio_FullStack`
 - `TEAM_DIR` = auto-detected bundle path
 - `CFG_DIR` = `${TEAM_DIR}/config-files`
@@ -80,8 +93,14 @@ Present a summary and ask for confirmation:
 > **Configuration summary:**
 > - OS: [detected]
 > - User: [detected]
+> - Install mode: [team-hub-parent / separate]
 > - Installation directory: [chosen path]
 > - Azure DevOps PAT: [masked, e.g. "****abcd"]
+>
+> If mode is `team-hub-parent`, also display:
+> - Team Hub repo: [TEAM_DIR]
+> - Repos will be cloned inside: [TEAM_DIR]/REPOs/Amelio_FullStack/
+> - `.gitignore` already excludes `REPOs/` and `DB_Freemium/`
 >
 > **Ready to start?**
 - **A**: All good, let's go!
@@ -152,6 +171,13 @@ echo "=== Final verification ===" && node -v && npm -v && yarn -v && dotnet --ve
 ---
 
 ## Step 2 — Create Directory Structure
+
+Both modes create the same subdirectory structure — the only difference is where `AMELIO_DIR` points.
+
+**If `INSTALL_MODE` = `team-hub-parent`**: `AMELIO_DIR` = `TEAM_DIR` (the amelio-team-hub repo root).
+The `REPOs/` and `DB_Freemium/` directories will be created **inside** the team-hub repo, but they are excluded from git via `.gitignore`.
+
+**If `INSTALL_MODE` = `separate`**: `AMELIO_DIR` = `~/Amelio_primary` (or custom path).
 
 ```bash
 mkdir -p "${AMELIO_DIR}/REPOs/Amelio_FullStack"
@@ -526,6 +552,14 @@ Report: X succeeded, Y failed. If any failed, propose manual install.
 
 Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Simple.code-workspace`.
 
+### If `INSTALL_MODE` = `team-hub-parent`
+Modifications to apply:
+1. **Keep** the first folder entry `"👥 — 🏠 Amelio Team Hub"` but change its `path` from `"../.."` to `"."` (the team-hub IS the root)
+2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` (= `${TEAM_DIR}`) path:
+   - macOS: e.g. `/Users/${USERNAME}/amelio-team-hub` (wherever the repo was cloned)
+   - Windows: use forward slashes for VS Code
+
+### If `INSTALL_MODE` = `separate`
 Modifications to apply:
 1. **Remove** the first folder entry `"👥 — 🏠 Amelio Team Hub"` (path `"../.."`), as it is only needed for the initial onboarding
 2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` path chosen in Step 0:
