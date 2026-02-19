@@ -180,14 +180,42 @@ Present a table of what is installed vs missing. **Only install what is missing.
 
 ### 1b — Install missing tools (macOS)
 If `OS_TYPE` = `Darwin`:
+
+**Step 1 — Install Homebrew if missing:**
 ```bash
 which brew &>/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-Then install ONLY missing tools from this list:
+
+**Step 2 — Add Homebrew to PATH (Apple Silicon Macs):**
 ```bash
-brew install node yarn git git-lfs gh dotnet@8 azure-cli
-brew tap mongodb/brew && brew install mongodb-community mongosh
-brew install --cask mongodb-compass docker
+echo >> ~/.zprofile && echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~/.zprofile && eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+```
+
+**Step 3 — Install ONLY missing tools:**
+```bash
+brew install node yarn git git-lfs gh mongosh
+brew install --cask docker
+```
+
+> **Note on yarn**: If `brew install yarn` reports a symlink conflict (`/opt/homebrew/bin/yarn already exists`), run:
+> ```bash
+> brew link --overwrite yarn
+> ```
+
+**Step 4 — Add dotnet tools to PATH:**
+```bash
+echo 'export PATH="$PATH:/Users/${USERNAME}/.dotnet/tools"' >> ~/.zprofile && export PATH="$PATH:${HOME}/.dotnet/tools"
+```
+
+**Step 5 — Install dotnet-ef (Entity Framework CLI):**
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+**Step 6 — Configure git global identity:**
+```bash
+git config --global user.name "[Full Name]"
+git config --global user.email "[email@example.com]"
 ```
 
 ### 1c — Install missing tools (Windows)
@@ -644,20 +672,31 @@ Tell user:
 ## Step 8 — Install Dependencies & Build Projects
 
 ### 8a — Azure DevOps npm authentication (for @amelio packages)
+
+> **macOS note**: `vsts-npm-auth` does not work on macOS. Use the manual approach below.
+
+For **both** `amelio-ui-library` and `amelio-performance-fe`, write the `.npmrc` auth block:
+
 ```bash
-cd "${FS_DIR}/amelio-ui-library"
-npx vsts-npm-auth -config .npmrc
-```
-If this fails (e.g. on macOS), manually create/verify `.npmrc`:
-```bash
-cat .npmrc
-```
-Ensure it contains:
-```
+# Compute B64 = base64("anything:PAT") — note: username MUST be included
+B64=$(echo -n "anything:${ADO_PAT}" | base64)
+
+for REPO in amelio-ui-library amelio-performance-fe; do
+  NPMRC="${FS_DIR}/${REPO}/.npmrc"
+  cat > "$NPMRC" << EOF
 registry=https://registry.npmjs.org/
+
 @amelio:registry=https://pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/
 always-auth=true
+//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:username=anything
+//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_password=${B64}
+//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=${USERNAME}@amelio.co
+EOF
+done
+echo "npm auth configured"
 ```
+
+> **Critical**: The `_password` value must be `base64("anything:PAT")` — NOT `base64(":PAT")` and NOT the raw PAT. The `username` field in the `.npmrc` must match the prefix used in the base64 encoding.
 
 ### 8b — UI Library (install + build — REQUIRED before Performance FE)
 ```bash
@@ -666,11 +705,18 @@ cd "${FS_DIR}/amelio-ui-library" && yarn install && yarn build
 The `yarn build` creates the `dist/` folder that Performance FE depends on.
 
 ### 8c — Performance Frontend
+
+**Option 1 (preferred)**: If `@amelio/ui-library` is published on the ADO feed and the PAT has Packaging (Read) scope:
 ```bash
-cd "${FS_DIR}/amelio-performance-fe"
-npx vsts-npm-auth -config .npmrc 2>/dev/null || true
-yarn install
+cd "${FS_DIR}/amelio-performance-fe" && yarn install
 ```
+
+**Option 2 (fallback — if yarn cannot resolve `@amelio/ui-library` from ADO feed)**: Use `npm link` to link the locally built UI Library:
+```bash
+cd "${FS_DIR}/amelio-ui-library" && npm link
+cd "${FS_DIR}/amelio-performance-fe" && npm link @amelio/ui-library
+```
+This uses the locally built `dist/` from Step 8b instead of downloading from ADO.
 
 ### 8d — Performance Backend
 ```bash
@@ -687,6 +733,8 @@ cd "${FS_DIR}/Amelio - React" && npm install --legacy-peer-deps
 ```bash
 cd "${FS_DIR}/Amelio - Back-End" && dotnet restore
 ```
+
+> **Known issue**: If `dotnet restore` fails with `401 Unauthorized` on `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`, the PAT does not have **Packaging (Read)** scope for the NuGet feed. Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, update `${HOME_DIR}/.nuget/NuGet/NuGet.Config` with the new PAT, and retry. If the issue persists, log the error and continue — the Legacy Backend can be restored later.
 
 Verify NuGet restore succeeded (macOS):
 ```bash
@@ -731,19 +779,35 @@ Ask the user with a multiple-choice question:
 
 Extension files are in `${TEAM_DIR}/ide-settings/`:
 
+> **macOS note**: `windsurf` is not automatically in PATH. Resolve the binary first:
+> ```bash
+> WINDSURF=$(which windsurf 2>/dev/null || echo "/Applications/Windsurf.app/Contents/Resources/app/bin/windsurf")
+> ```
+
 For **A/B/C**, install essentials:
 ```bash
+WINDSURF=$(which windsurf 2>/dev/null || echo "/Applications/Windsurf.app/Contents/Resources/app/bin/windsurf")
+FAILED=0; SUCCESS=0
 while IFS= read -r ext; do
   [[ -z "$ext" || "$ext" == \#* ]] && continue
-  windsurf --install-extension "$ext" --force 2>&1 || echo "FAILED: $ext"
+  if "$WINDSURF" --install-extension "$ext" --force 2>&1 | grep -q "successfully installed\|already installed"; then
+    SUCCESS=$((SUCCESS+1))
+  else
+    echo "FAILED: $ext"; FAILED=$((FAILED+1))
+  fi
 done < "${TEAM_DIR}/ide-settings/extensions-team.txt"
+echo "Essentials: ${SUCCESS} succeeded, ${FAILED} failed"
 ```
 
 For **B/C**, also install optional:
 ```bash
 while IFS= read -r ext; do
   [[ -z "$ext" || "$ext" == \#* ]] && continue
-  windsurf --install-extension "$ext" --force 2>&1 || echo "FAILED: $ext"
+  if "$WINDSURF" --install-extension "$ext" --force 2>&1 | grep -q "successfully installed\|already installed"; then
+    SUCCESS=$((SUCCESS+1))
+  else
+    echo "FAILED: $ext"; FAILED=$((FAILED+1))
+  fi
 done < "${TEAM_DIR}/ide-settings/extensions-optional.txt"
 ```
 
@@ -752,7 +816,11 @@ For **C**, also install extras (parse `ext-id | description`):
 while IFS= read -r line; do
   [[ -z "$line" || "$line" == \#* ]] && continue
   ext_id=$(echo "$line" | cut -d'|' -f1 | xargs)
-  windsurf --install-extension "$ext_id" --force 2>&1 || echo "FAILED: $ext_id"
+  if "$WINDSURF" --install-extension "$ext_id" --force 2>&1 | grep -q "successfully installed\|already installed"; then
+    SUCCESS=$((SUCCESS+1))
+  else
+    echo "FAILED: $ext_id"; FAILED=$((FAILED+1))
+  fi
 done < "${TEAM_DIR}/ide-settings/extensions-extras.txt"
 ```
 
