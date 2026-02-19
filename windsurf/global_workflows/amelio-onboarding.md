@@ -44,6 +44,13 @@ Code, configs, comments, and generated files remain in **English** regardless of
 echo "OS=$(uname -s)" && echo "USER=$(whoami)" && echo "HOME=$HOME"
 ```
 
+On Windows (PowerShell):
+```powershell
+Write-Host "OS=$([System.Environment]::OSVersion.Platform)" ; Write-Host "USER=$env:USERNAME" ; Write-Host "HOME=$env:USERPROFILE"
+```
+
+**OS detection note**: Cascade should detect the OS from the shell environment. If `uname` fails or returns nothing, assume Windows. On Windows, `HOME_DIR` = `$env:USERPROFILE` (e.g. `C:\Users\dev`). Use **forward slashes** in all generated paths for VS Code/Windsurf compatibility.
+
 Detect `TEAM_DIR` automatically using this strategy (in order):
 1. **From this workflow file's path**: this file lives at `TEAM_DIR/windsurf/global_workflows/amelio-onboarding.md` — resolve two levels up to get `TEAM_DIR`
 2. **Search the current workspace**: look for the folder named `"👥 — 🏠 Amelio Team Hub"` in the Windsurf workspace roots
@@ -124,6 +131,20 @@ echo "gh: $(gh --version 2>/dev/null | head -1 || echo 'NOT INSTALLED')" && \
 echo "mongosh: $(mongosh --version 2>/dev/null || echo 'NOT INSTALLED')"
 ```
 
+On Windows (PowerShell):
+```powershell
+Write-Host "=== Checking installed tools ==="
+function Check-Tool($name, $cmd) { try { $v = & $cmd 2>$null; Write-Host "${name}: $v" } catch { Write-Host "${name}: NOT INSTALLED" } }
+Check-Tool "node" { node -v }
+Check-Tool "npm" { npm -v }
+Check-Tool "yarn" { yarn -v }
+Check-Tool "git" { git --version }
+Check-Tool "dotnet" { dotnet --version }
+Check-Tool "docker" { docker --version }
+Check-Tool "gh" { (gh --version | Select-Object -First 1) }
+Check-Tool "mongosh" { mongosh --version }
+```
+
 Present a table of what is installed vs missing. **Only install what is missing.**
 
 ### 1b — Install missing tools (macOS)
@@ -162,10 +183,20 @@ Wait for confirmation, then verify:
 docker info --format '{{.ServerVersion}}' 2>&1
 ```
 
+On Windows (PowerShell):
+```powershell
+docker info --format '{{.ServerVersion}}'
+```
+
 ### 1e — Verify all
 // turbo
 ```bash
 echo "=== Final verification ===" && node -v && npm -v && yarn -v && dotnet --version && docker --version && gh --version && mongosh --version
+```
+
+On Windows (PowerShell):
+```powershell
+Write-Host "=== Final verification ==="; node -v; npm -v; yarn -v; dotnet --version; docker --version; gh --version; mongosh --version
 ```
 
 ---
@@ -217,6 +248,11 @@ git clone "${ADO}/Amelio-Development%20Packages/_git/amelio-ui-library" "${FS_DI
 ls -1 "${FS_DIR}"
 ```
 
+On Windows (PowerShell):
+```powershell
+Get-ChildItem "${FS_DIR}" -Name
+```
+
 ---
 
 ## Step 4 — Deploy Windsurf Configuration (from amelio-team-hub)
@@ -229,10 +265,22 @@ mkdir -p "${HOME_DIR}/.codeium/.windsurf/rules"
 cp "${TEAM_DIR}/windsurf/rules/"*.md "${HOME_DIR}/.codeium/.windsurf/rules/"
 ```
 
+On Windows (PowerShell):
+```powershell
+New-Item -ItemType Directory -Force -Path "${HOME_DIR}/.codeium/.windsurf/rules"
+Copy-Item "${TEAM_DIR}/windsurf/rules/*.md" "${HOME_DIR}/.codeium/.windsurf/rules/"
+```
+
 ### 4b — Deploy global rules (memories)
 ```bash
 mkdir -p "${HOME_DIR}/.codeium/windsurf/memories"
 cp "${TEAM_DIR}/windsurf/memories/global_rules.md" "${HOME_DIR}/.codeium/windsurf/memories/"
+```
+
+On Windows (PowerShell):
+```powershell
+New-Item -ItemType Directory -Force -Path "${HOME_DIR}/.codeium/windsurf/memories"
+Copy-Item "${TEAM_DIR}/windsurf/memories/global_rules.md" "${HOME_DIR}/.codeium/windsurf/memories/"
 ```
 
 ### 4c — Deploy shared skills
@@ -244,10 +292,25 @@ for skill_dir in "${TEAM_DIR}/windsurf/skills/"*/; do
 done
 ```
 
+On Windows (PowerShell):
+```powershell
+Get-ChildItem "${TEAM_DIR}/windsurf/skills" -Directory | ForEach-Object {
+  $dest = "${HOME_DIR}/.codeium/windsurf/skills/$($_.Name)"
+  New-Item -ItemType Directory -Force -Path $dest
+  Copy-Item "$($_.FullName)/*" $dest -Recurse -Force
+}
+```
+
 ### 4d — Deploy global workflows
 ```bash
 mkdir -p "${HOME_DIR}/.codeium/windsurf/global_workflows"
 cp "${TEAM_DIR}/windsurf/global_workflows/"*.md "${HOME_DIR}/.codeium/windsurf/global_workflows/"
+```
+
+On Windows (PowerShell):
+```powershell
+New-Item -ItemType Directory -Force -Path "${HOME_DIR}/.codeium/windsurf/global_workflows"
+Copy-Item "${TEAM_DIR}/windsurf/global_workflows/*.md" "${HOME_DIR}/.codeium/windsurf/global_workflows/"
 ```
 
 ### 4e — Deploy PR workflows to repos
@@ -260,6 +323,16 @@ mkdir -p "${FS_DIR}/amelio-performance-backend/.windsurf/workflows"
 cp "${TEAM_DIR}/windsurf/global_workflows/create-perfo-be-pr.md" "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
 ```
 
+On Windows (PowerShell):
+```powershell
+foreach ($repo in @("amelio-performance-fe", "amelio-ui-library")) {
+  New-Item -ItemType Directory -Force -Path "${FS_DIR}/$repo/.windsurf/workflows"
+  Copy-Item "${TEAM_DIR}/windsurf/global_workflows/create-perfo-fe-pr.md" "${FS_DIR}/$repo/.windsurf/workflows/"
+}
+New-Item -ItemType Directory -Force -Path "${FS_DIR}/amelio-performance-backend/.windsurf/workflows"
+Copy-Item "${TEAM_DIR}/windsurf/global_workflows/create-perfo-be-pr.md" "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
+```
+
 ### 4f — Verify deployment
 // turbo
 ```bash
@@ -268,6 +341,15 @@ echo "=== Global Rules ===" && ls "${HOME_DIR}/.codeium/windsurf/memories/global
 echo "=== Skills ===" && ls "${HOME_DIR}/.codeium/windsurf/skills/"
 echo "=== Global Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflows/"
 echo "=== Repo Workflows ===" && ls "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" && ls "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
+```
+
+On Windows (PowerShell):
+```powershell
+Write-Host "=== Rules ==="; Get-ChildItem "${HOME_DIR}/.codeium/.windsurf/rules/" -Name
+Write-Host "=== Global Rules ==="; Test-Path "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
+Write-Host "=== Skills ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/skills/" -Name
+Write-Host "=== Global Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name
+Write-Host "=== Repo Workflows ==="; Get-ChildItem "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/" -Name
 ```
 
 ---
@@ -289,6 +371,11 @@ docker run -d --name amelio_mongodb \
 If container already exists, start it:
 ```bash
 docker start amelio_mongodb 2>/dev/null || true
+```
+
+On Windows (PowerShell):
+```powershell
+docker start amelio_mongodb 2>$null; if (-not $?) { Write-Host "Container not found, creating..." }
 ```
 
 ### 5b — Start Performance Backend containers (PostgreSQL, Redis, Mailpit)
@@ -356,6 +443,12 @@ cp "${CFG_DIR}/performance-backend/appsettings.Development.json" "${FS_DIR}/amel
 cp "${CFG_DIR}/performance-backend/appsettings.Testing.json" "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/"
 ```
 
+On Windows (PowerShell):
+```powershell
+Copy-Item "${CFG_DIR}/performance-backend/appsettings.Development.json" "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/"
+Copy-Item "${CFG_DIR}/performance-backend/appsettings.Testing.json" "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/"
+```
+
 ### 7b — Legacy Backend config (MongoDB connection strings)
 Modify **3 files** to use local Docker MongoDB:
 
@@ -374,12 +467,11 @@ Modify **3 files** to use local Docker MongoDB:
 **File 3** (optional): `${FS_DIR}/Amelio - Back-End/OPIA.Scheduler.V2/appsettings.json`
 - Same MongoDB connection string update
 
-After modifying, protect local changes from git:
+After modifying, protect local changes from git (same command on both OS — `git` is cross-platform):
 ```bash
-cd "${FS_DIR}/Amelio - Back-End"
-git update-index --skip-worktree IdentityServer/appsettings.json
-git update-index --skip-worktree OPIA.API.V2/appsettings.Development.json
-git update-index --skip-worktree OPIA.Scheduler.V2/appsettings.json
+git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree IdentityServer/appsettings.json
+git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.API.V2/appsettings.Development.json
+git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.Scheduler.V2/appsettings.json
 ```
 
 ### 7c — NuGet setup (macOS ONLY)
@@ -420,10 +512,15 @@ cp "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.e
 cp "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
 ```
 
-Protect from git:
+On Windows (PowerShell):
+```powershell
+Copy-Item "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
+Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
+```
+
+Protect from git (cross-platform):
 ```bash
-cd "${FS_DIR}/Amelio - React"
-git update-index --skip-worktree .env.development
+git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
 ```
 
 ### 7e — Performance Frontend config
@@ -435,6 +532,16 @@ if [ -f .env.sample ]; then
 else
   cp "${CFG_DIR}/performance-fe/.env.template" .env
 fi
+```
+
+On Windows (PowerShell):
+```powershell
+Set-Location "${FS_DIR}/amelio-performance-fe"
+if (Test-Path .env.sample) {
+  Copy-Item .env.sample .env
+} else {
+  Copy-Item "${CFG_DIR}/performance-fe/.env.template" .env
+}
 ```
 
 Tell user:
@@ -495,6 +602,11 @@ Verify NuGet restore succeeded (macOS):
 ```bash
 find . -name "*.nupkg" | wc -l
 ```
+
+On Windows (PowerShell):
+```powershell
+(Get-ChildItem -Recurse -Filter "*.nupkg" | Measure-Object).Count
+```
 Expected: `0`. If packages appear in the repo, the NuGet config from Step 7c needs fixing.
 
 ### 8g — Verify all installs
@@ -505,6 +617,15 @@ echo "=== Perf FE node_modules ===" && ls "${FS_DIR}/amelio-performance-fe/node_
 echo "=== Legacy FE node_modules ===" && ls "${FS_DIR}/Amelio - React/node_modules/" 2>&1 | head -3
 echo "=== Perf BE restore ===" && ls "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/bin/" 2>&1 | head -3
 echo "=== Legacy BE restore ===" && ls "${FS_DIR}/Amelio - Back-End/OPIA.API.V2/bin/" 2>&1 | head -3
+```
+
+On Windows (PowerShell):
+```powershell
+Write-Host "=== UI Library dist ==="; Get-ChildItem "${FS_DIR}/amelio-ui-library/dist/" -Name | Select-Object -First 5
+Write-Host "=== Perf FE node_modules ==="; Get-ChildItem "${FS_DIR}/amelio-performance-fe/node_modules/" -Name | Select-Object -First 3
+Write-Host "=== Legacy FE node_modules ==="; Get-ChildItem "${FS_DIR}/Amelio - React/node_modules/" -Name | Select-Object -First 3
+Write-Host "=== Perf BE restore ==="; Get-ChildItem "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/bin/" -Name | Select-Object -First 3
+Write-Host "=== Legacy BE restore ==="; Get-ChildItem "${FS_DIR}/Amelio - Back-End/OPIA.API.V2/bin/" -Name | Select-Object -First 3
 ```
 
 ---
@@ -542,6 +663,28 @@ while IFS= read -r line; do
   ext_id=$(echo "$line" | cut -d'|' -f1 | xargs)
   windsurf --install-extension "$ext_id" --force 2>&1 || echo "FAILED: $ext_id"
 done < "${TEAM_DIR}/ide-settings/extensions-extras.txt"
+```
+
+On Windows (PowerShell) — same logic for all tiers:
+```powershell
+# Essentials (A/B/C)
+Get-Content "${TEAM_DIR}/ide-settings/extensions-team.txt" | Where-Object { $_ -and $_ -notmatch '^\s*#' } | ForEach-Object {
+  windsurf --install-extension $_.Trim() --force 2>&1 | Out-Null
+  if (-not $?) { Write-Host "FAILED: $_" }
+}
+
+# Optional (B/C)
+Get-Content "${TEAM_DIR}/ide-settings/extensions-optional.txt" | Where-Object { $_ -and $_ -notmatch '^\s*#' } | ForEach-Object {
+  windsurf --install-extension $_.Trim() --force 2>&1 | Out-Null
+  if (-not $?) { Write-Host "FAILED: $_" }
+}
+
+# Extras (C) — parse "ext-id | description"
+Get-Content "${TEAM_DIR}/ide-settings/extensions-extras.txt" | Where-Object { $_ -and $_ -notmatch '^\s*#' } | ForEach-Object {
+  $extId = ($_ -split '\|')[0].Trim()
+  windsurf --install-extension $extId --force 2>&1 | Out-Null
+  if (-not $?) { Write-Host "FAILED: $extId" }
+}
 ```
 
 Report: X succeeded, Y failed. If any failed, propose manual install.
@@ -624,6 +767,18 @@ git clone "${ADO}/Amelio-Performance%20Management/_git/amelio-performance-fe" "$
 git clone "${ADO}/Amelio-Development%20Packages/_git/amelio-ui-library" "${FS2}/amelio-ui-library"
 ```
 
+On Windows (PowerShell):
+```powershell
+$FS2 = "${HOME_DIR}/Amelio_secondary/REPOs/Amelio_FullStack"
+New-Item -ItemType Directory -Force -Path $FS2
+$ADO = "https://${ADO_PAT}@dev.azure.com/ameliodev"
+git clone "$ADO/Amelio%20-%20First%20Product/_git/Amelio%20-%20Back-End" "$FS2/Amelio - Back-End"
+git clone "$ADO/Amelio%20-%20First%20Product/_git/Amelio%20-%20React" "$FS2/Amelio - React"
+git clone "$ADO/Amelio-Performance%20Management/_git/amelio-performance-backend" "$FS2/amelio-performance-backend"
+git clone "$ADO/Amelio-Performance%20Management/_git/amelio-performance-fe" "$FS2/amelio-performance-fe"
+git clone "$ADO/Amelio-Development%20Packages/_git/amelio-ui-library" "$FS2/amelio-ui-library"
+```
+
 Generate a second workspace file using the same template but with `Amelio_secondary` paths.
 
 ---
@@ -646,6 +801,22 @@ echo "=== 9. Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflow
 echo "=== 10. Workspace ===" && ls "${AMELIO_DIR}/REPOs/WorkSpace/Simple_${USERNAME}.code-workspace" 2>&1
 echo "=== 11. UI Library dist ===" && ls "${FS_DIR}/amelio-ui-library/dist/index.css" 2>&1
 echo "=== 12. Config files ===" && ls "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json" "${FS_DIR}/amelio-performance-fe/.env" "${FS_DIR}/Amelio - React/.env.development" 2>&1
+```
+
+On Windows (PowerShell):
+```powershell
+Write-Host "=== 1. Dependencies ==="; node -v; npm -v; yarn -v; dotnet --version; docker --version; gh --version; mongosh --version
+Write-Host "=== 2. ADO Repos ==="; @("Amelio - Back-End","Amelio - React","amelio-performance-backend","amelio-performance-fe","amelio-ui-library") | ForEach-Object { Test-Path "${FS_DIR}/$_" }
+Write-Host "=== 3. Docker Containers ==="; docker ps --format "{{.Names}}"
+Write-Host "=== 4. MongoDB ==="; mongosh "mongodb://ameliodb:ameliodb@localhost:27017/Freemium?authSource=admin" --quiet --eval "db.getCollectionNames().length + ' collections'"
+Write-Host "=== 5. PostgreSQL ==="; docker exec dev_db psql -U dev_user -d dev_db -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
+Write-Host "=== 6. Rules ==="; Get-ChildItem "${HOME_DIR}/.codeium/.windsurf/rules/" -Name
+Write-Host "=== 7. Global Rules ==="; Test-Path "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
+Write-Host "=== 8. Skills ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/skills/" -Name
+Write-Host "=== 9. Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/" -Name
+Write-Host "=== 10. Workspace ==="; Test-Path "${AMELIO_DIR}/REPOs/WorkSpace/Simple_${USERNAME}.code-workspace"
+Write-Host "=== 11. UI Library dist ==="; Test-Path "${FS_DIR}/amelio-ui-library/dist/index.css"
+Write-Host "=== 12. Config files ==="; Test-Path "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json"; Test-Path "${FS_DIR}/amelio-performance-fe/.env"; Test-Path "${FS_DIR}/Amelio - React/.env.development"
 ```
 
 Present summary table:
