@@ -1,0 +1,53 @@
+# Amelio — Getting Started
+
+> Everything you need to set up your Amelio development environment from scratch.
+
+## Prerequisites
+
+- [**Windsurf IDE**](https://windsurf.com) installed
+- **Git** installed (`git --version` to verify)
+- **Azure DevOps PAT** — ask your lead for the scopes needed (Code Read/Write, Packaging Read)
+
+## 1. Clone the Team Hub
+
+```bash
+git clone https://github.com/joejeanson/amelio-team-hub.git
+```
+
+## 2. Open the Workspace
+
+Open the file below in **Windsurf IDE**:
+
+```
+amelio-team-hub/windsurf/workspace/Simple.code-workspace
+```
+
+> You can open it via `File > Open Workspace from File...` or drag it onto the IDE.
+
+## 3. Start the Onboarding
+
+1. In the Windsurf sidebar, locate the **Team Hub** folder
+2. Drag the file `windsurf/global_workflows/amelio-onboarding.md` into the **Cascade chat panel**
+3. Cascade reads the workflow and walks you through **13 interactive steps** (~30–45 min)
+
+The onboarding handles everything automatically:
+- System dependencies (Node.js, .NET, Docker, etc.)
+- Cloning all 5 Amelio repositories from Azure DevOps
+- Docker containers (MongoDB, PostgreSQL, Redis, Mailpit)
+- Database setup and migrations
+- Config files and environment variables
+- IDE extensions and workspace configuration
+
+## 4. After Onboarding
+
+Once complete, the workflow is deployed to your system. You can re-invoke it anytime with:
+
+```
+/amelio-onboarding
+```
+
+For more details, see the full [README](./README.md) inside the repo.
+
+## Need Help?
+
+If you run into issues, reach out to your lead or check the `TESTING-GUIDE.md` in the repo for troubleshooting steps.
