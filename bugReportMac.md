@@ -131,65 +131,97 @@
 
 ---
 
-## ❌ UNRESOLVED
+## ✅ RESOLVED (suite)
 
 ### 21a. Workflow d'onboarding écrase `.env.local` sans protection git (OMAGE 1)
 - **Error**: N/A — modification non sollicitée d'un fichier git-tracké
-- **Root cause**: Step 7d copie `.env.local.template` vers `.env.local` sans vérifier si le fichier existe déjà et sans protéger le fichier avec `skip-worktree`. Si `.env.local` contient déjà des secrets/configs locales (ex: tokens), ils sont silencieusement écrasés. De plus, toute modification ultérieure de `.env.local` apparaît comme un diff git-tracké risquant d'être committé accidentellement.
-- **Impact**: Perte de configs locales existantes + risque de commit accidentel de secrets
-- **À investiguer**:
-  - Faut-il ajouter une copie conditionnelle (`[ ! -f ]`) dans Step 7d ?
-  - Faut-il appliquer `git update-index --skip-worktree .env.local` après la copie ?
-  - Ou faut-il ajouter `.env.local` au `.gitignore` du repo `Amelio - React` ?
-- **Workaround actuel**: Vérifier manuellement `git status` après Step 7d et appliquer `git update-index --skip-worktree .env.local` si nécessaire
+- **Root cause (initial)**: Step 7d copiait `.env.local.template` vers `.env.local` sans vérifier si le fichier existait déjà
+- **Root cause (réel, découvert après double validation)**: `.env.development` et `.env.local` sont **git-trackés dans le repo `Amelio - React`** — ils sont déjà présents après `git clone`. Aucune copie de template n'est nécessaire.
+- **Fix applied**:
+  1. Step 7d entièrement réécrit — ne copie plus aucun template pour Legacy Frontend
+  2. Step 7d applique uniquement `git update-index --skip-worktree` sur `.env.development` et `.env.local` pour protéger les modifications locales
+  3. Dossier `config-files/legacy-fe/` supprimé (templates `.env.development.template` et `.env.local.template` inutiles)
+- **Workflow fix**: Step 7d corrigé dans `amelio-onboarding.md` (commit `c8b9030`)
 
 ### 14. MongoDB Freemium database not imported
-- **Status**: Skipped — dump not available on this machine
+- **Status**: Skipped during test — dump not available on the test machine
 - **Impact**: Legacy Backend will not have data on first run
-- **Resolution**: Obtain the `DB_Freemium/Freemium/` dump folder and run:
-  ```bash
-  mongorestore --host localhost:27017 \
-    --username ameliodb --password ameliodb \
-    --authenticationDatabase admin \
-    --db Freemium \
-    "<PATH_TO_DB_FREEMIUM>/Freemium/"
-  ```
-- **Note**: The dump should be made available in `amelio-team-hub` or shared via a secure channel
+- **Fix applied**: Step 6a entièrement réécrit avec instructions claires :
+  - Le dump `DB_Freemium/` (~286 Mo, 242 fichiers BSON) est distribué manuellement par le team lead
+  - Chemin cible : `${AMELIO_DIR}/DB_Freemium/` (déjà dans `.gitignore`)
+  - Options A/B/C selon disponibilité du dump
+- **Workflow fix**: Step 6a mis à jour dans `amelio-onboarding.md`
 
 ### 15. VITE_DEV_TOKEN not set in amelio-performance-fe/.env
-- **Status**: Placeholder only — requires a live JWT token
-- **Impact**: Performance Frontend dev mode will not authenticate against Legacy Backend
-- **Resolution**: Start Legacy Frontend (http://localhost:3011), log in, open DevTools > Network, copy the Bearer token from any API request header, paste into `.env` as `VITE_DEV_TOKEN`
+- **Status**: Par design — nécessite un token JWT live
+- **Impact**: Performance Frontend dev mode ne peut pas s'authentifier sans token valide
+- **Fix applied**: Step 7e et Step 8g documentent la procédure pour obtenir le token depuis Legacy Frontend (DevTools > Network > Authorization header)
+- **Workflow fix**: Instructions déjà présentes dans le workflow — comportement attendu
 
 ### 17. `.npmrc` repo files modified instead of using `~/.npmrc` global
 - **Error**: N/A — process error (git-tracked file polluted)
 - **Cause**: Step 8a incorrectly wrote ADO credentials into the repo-level `.npmrc` files (`amelio-ui-library/.npmrc`, `amelio-performance-fe/.npmrc`), which are git-tracked
-- **Why it worked in another environment**: npm/yarn automatically merges `~/.npmrc` (user-level) with the project `.npmrc`. The other environment likely had credentials already in `~/.npmrc` from a previous setup (e.g. `vsts-npm-auth` on Windows, or a prior manual setup). The repo `.npmrc` only needs to declare the registry URL — credentials must never be added there.
 - **Fix applied**: Reverted both `.npmrc` files with `git checkout .npmrc`. Added credentials to `~/.npmrc` (user-level) instead.
-- **Workflow fix**: Step 8a completely rewritten — now writes to `~/.npmrc` only, with explicit warning never to modify repo `.npmrc` files
+- **Workflow fix**: Step 8a completely rewritten — now writes to `~/.npmrc` only, with explicit `🚫 NEVER` warning against modifying repo `.npmrc` files
 
 ### 18. `WorkSpace/` and `Documentations/` created inside `REPOs/` instead of at `AMELIO_DIR` root
 - **Error**: N/A — wrong directory structure
-- **Cause**: Step 2 mkdir commands placed `WorkSpace/` and `Documentations/` inside `REPOs/`, but they should be at the root of `AMELIO_DIR` alongside `windsurf/`, `config-files/`, etc.
-- **Fix applied**: Moved both directories: `mv REPOs/WorkSpace WorkSpace` and `mv REPOs/Documentations Documentations`
-- **Workspace fix**: Updated `Amelio_devtest.code-workspace` Documentations path from `REPOs/Documentations` to `Documentations`
-- **Workflow fix**: Step 2 mkdir commands corrected; added layout note explaining the structure
+- **Fix applied**: Step 2 mkdir commands corrected in workflow; layout note added explaining the structure
+- **Workflow fix**: Step 2 corrected in `amelio-onboarding.md`
 
 ### 19. Workspace `path: "."` pointed to `WorkSpace/` folder, not `amelio-team-hub` root
 - **Error**: Team Hub folder in workspace opened `WorkSpace/` directory instead of the repo root
-- **Cause**: The workspace file was initially saved in `REPOs/WorkSpace/` and used `path: "."` which resolved to that folder. After moving to `amelio-team-hub/WorkSpace/`, the correct relative path is `".."` (one level up).
-- **Fix applied**: Changed `"path": "."` to `"path": ".."` — workspace is in `amelio-team-hub/WorkSpace/`, so `".."` correctly points to `amelio-team-hub/` root ✅
-- **Workflow fix**: Step 10 generation logic must use `".."` for the Team Hub folder path when workspace is saved in `AMELIO_DIR/WorkSpace/`
+- **Fix applied**: Step 10 generation logic corrected — uses `".."` for the Team Hub folder path (workspace saved in `AMELIO_DIR/WorkSpace/`, so `".."` resolves to team-hub root)
+- **Workflow fix**: Step 10 corrected in `amelio-onboarding.md`
 
 ### 16. Workspace file created without asking user for filename / without checking for existing file
 - **Error**: N/A — process error
 - **Cause**: Step 10 generated `Simple_devtest.code-workspace` using the OS username without asking the user for their preferred name, and without checking if a file already existed at that path
-- **Bad naming**: The prefix `Simple_` comes from the template filename and is not appropriate for personal workspace files
-- **Impact**: Could silently overwrite a previously customized workspace file
-- **Fix applied**: File renamed to `Amelio_devtest.code-workspace`. Workflow Step 10 updated to:
-  1. Always ask the user to choose a filename with meaningful options (`Amelio_username`, `Amelio_FirstLastName`, etc.)
-  2. Never use `Simple_` as a prefix for personal workspace files
-  3. Check for existing file before writing — error if file already exists
-- **Workflow fix**: Step 10 now includes filename selection question, naming convention note, and existence check
+- **Fix applied**: Step 10 updated — always asks user to choose filename, never uses `Simple_`/`Template_` prefix, checks for existing file before writing
+- **Workflow fix**: Step 10 corrected in `amelio-onboarding.md`
+
+---
+
+## 🧪 À TESTER — Prochain onboarding devtest
+
+> Ces corrections ont été appliquées mais **non encore validées** par un test réel. À vérifier lors du prochain onboarding sur machine fraîche.
+
+### T1 — NuGet restore (Bug #13 + #22)
+- [ ] PAT créé avec scopes **Code (Read & Write)** + **Packaging (Read)**
+- [ ] `~/.nuget/NuGet/NuGet.Config` créé depuis template avec PAT valide
+- [ ] `dotnet restore` sur `Amelio - Back-End` réussit sans 401
+- [ ] Si `Amelio.MongoRepository 2.1.3` absent du feed : workaround cache NuGet documenté dans Step 8f fonctionne
+
+### T2 — DB_Freemium (Bug #14)
+- [ ] Step 6a affiche les instructions claires pour copier `DB_Freemium/` dans `${AMELIO_DIR}/`
+- [ ] `mongorestore` réussit après copie manuelle du dump
+- [ ] Legacy Backend démarre avec données Freemium
+
+### T3 — Legacy Frontend config (Bug #21a)
+- [ ] Step 7d N'écrase PAS `.env.development` ni `.env.local` (déjà présents après clone)
+- [ ] `git update-index --skip-worktree` appliqué sur les deux fichiers
+- [ ] `git status` dans `Amelio - React` montre 0 fichiers modifiés après Step 7d
+
+### T4 — Workspace generation (Bugs #16 + #19)
+- [ ] Step 10 demande le nom du fichier workspace à l'utilisateur
+- [ ] Fichier généré avec `path: ".."` pour le dossier Team Hub (pas `"."`)
+- [ ] Ouvrir le workspace généré → dossier "👥 — 🏠 Amelio Team Hub" pointe vers la racine du repo (pas vers `WorkSpace/`)
+
+### T5 — Workflows globaux (Bug #20)
+- [ ] Workflows déployés uniquement dans `~/.codeium/windsurf/global_workflows/`
+- [ ] Aucun dossier `.windsurf/` créé dans les repos ADO
+
+### T6 — npm ci (Bug #21b)
+- [ ] Step 8e utilise `npm ci --legacy-peer-deps` (pas `npm install`)
+- [ ] `git diff --name-only` dans `Amelio - React` après Step 8e = vide (pas de `package-lock.json` modifié)
+
+### T7 — Template workspace (renommage)
+- [ ] `windsurf/workspace/Template.code-workspace` s'ouvre correctement dans Windsurf
+- [ ] README, GETTING-STARTED, TESTING-GUIDE référencent bien `Template.code-workspace`
+
+### T8 — Performance Frontend env (Bug #15 + VITE_MFE_BASE_URL)
+- [ ] `.env` créé depuis `.env.sample` (Step 7e priorise `.env.sample` du repo)
+- [ ] `VITE_MFE_BASE_URL` présente dans le `.env` généré
+- [ ] `VITE_DEV_TOKEN` rempli manuellement après démarrage Legacy Frontend
 
 
