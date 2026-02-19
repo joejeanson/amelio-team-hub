@@ -1089,13 +1089,37 @@ Modifications to apply:
    - macOS: `/Users/${USERNAME}/Amelio_primary` (or custom path)
    - Windows: `C:/Users/${USERNAME}/Amelio_primary` (use forward slashes for VS Code)
 
-**Ask the user to choose a filename** for their personalized workspace. Suggest:
+**Ask the user TWO questions at once** — filename AND color theme — before generating the file.
+
+#### Question 1 — Choose a filename:
 - **A**: `Amelio_${USERNAME}.code-workspace` (uses OS username, e.g. `Amelio_devtest.code-workspace`)
 - **B**: `Amelio_[FirstName][LastName].code-workspace` (e.g. `Amelio_JonathanJeanson.code-workspace`) — recommended for team clarity
 - **C**: `[FirstName][LastName].code-workspace` (e.g. `JonathanJeanson.code-workspace`)
 - **D**: I want a different name (I will specify)
 
-> **Note**: The template file is named `Template.code-workspace`. Do NOT use `Template_` or `Simple_` as a prefix for personal workspace files. Use `Amelio_` or just the employee name.
+> **Note**: Do NOT use `Template_` or `Simple_` as a prefix. Use `Amelio_` or just the employee name.
+
+#### Question 2 — Choose a color theme for the workspace accent color:
+
+Present a visual preview table:
+
+| # | Theme | Activity Bar | Title Bar | Terminal accent |
+|---|---|---|---|---|
+| **1** | 🌲 Forest Green *(default)* | `#1B4332` | `#1B4332` | `#F4A261` |
+| **2** | 🌊 Ocean Blue | `#0D3B66` | `#0D3B66` | `#48CAE4` |
+| **3** | 🌸 Cherry Blossom | `#4A1942` | `#4A1942` | `#F7A8B8` |
+| **4** | 🌑 Midnight Dark | `#0D0D0D` | `#0D0D0D` | `#BB86FC` |
+| **5** | 🔥 Ember Red | `#3B0A0A` | `#3B0A0A` | `#FF6B6B` |
+| **6** | 🎨 Custom — I'll pick my own color |  |  |  |
+
+If **6 (Custom)**: ask the user for a hex color for the background (e.g. `#1A2B3C`) and a hex color for the accent (e.g. `#FFAA00`). Store as `THEME_BG` and `THEME_ACCENT`.
+
+Store the chosen theme colors as `THEME_BG` and `THEME_ACCENT`:
+- Theme 1: `THEME_BG=#1B4332`, `THEME_ACCENT=#F4A261`
+- Theme 2: `THEME_BG=#0D3B66`, `THEME_ACCENT=#48CAE4`
+- Theme 3: `THEME_BG=#4A1942`, `THEME_ACCENT=#F7A8B8`
+- Theme 4: `THEME_BG=#0D0D0D`, `THEME_ACCENT=#BB86FC`
+- Theme 5: `THEME_BG=#3B0A0A`, `THEME_ACCENT=#FF6B6B`
 
 **IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
 ```bash
@@ -1110,10 +1134,26 @@ fi
 
 If the file already exists, ask the user to choose a different name before proceeding.
 
+Apply the chosen theme by replacing the `workbench.colorCustomizations` block in the generated workspace JSON with:
+```json
+"workbench.colorCustomizations": {
+    "activityBar.background": "${THEME_BG}",
+    "activityBar.foreground": "${THEME_ACCENT}",
+    "activityBar.border": "${THEME_ACCENT}",
+    "titleBar.activeBackground": "${THEME_BG}",
+    "titleBar.activeForeground": "${THEME_ACCENT}",
+    "titleBar.border": "${THEME_ACCENT}",
+    "terminal.background": "#1e1e1e",
+    "terminal.foreground": "${THEME_ACCENT}",
+    "terminalCursor.background": "${THEME_ACCENT}",
+    "terminalCursor.foreground": "${THEME_ACCENT}"
+}
+```
+
 Save as `${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace`.
 
 Tell user:
-> Your personalized workspace is ready! To open it:
+> Your personalized workspace is ready! Theme: [chosen theme name]
 > **File > Open Workspace from File** and select `${CHOSEN_NAME}.code-workspace`.
 > ⚠️ This file is personal — do NOT commit it to git. Add it to `.gitignore` if needed.
 
