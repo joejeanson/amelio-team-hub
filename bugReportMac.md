@@ -112,6 +112,19 @@
   - Step 8e — note `🚫 NEVER run npm install` ajoutée + commande de vérification `git diff --name-only` après install + commande de restauration si `package-lock.json` apparaît
 - **Workflow fix**: Step 8e corrigé dans `amelio-onboarding.md`
 
+### 23. `~/.npmrc` format incorrect — `_password`+`username` rejeté par npm moderne
+- **Error**: `npm error code E401 — Unable to authenticate, your authentication token seems to be invalid`
+- **Root cause**: Step 8a utilisait le format `_password=base64("anything:PAT")` + `username=anything` — ce format est rejeté par npm v10+. Le format correct est `_authToken=<PAT>` (raw PAT, sans encodage)
+- **Fix applied**: `~/.npmrc` réécrit avec `_authToken=${ADO_PAT}` uniquement
+- **Workflow fix**: Step 8a corrigé dans `amelio-onboarding.md` — utilise `_authToken` au lieu de `_password`+`username`+B64
+
+### 24. Performance FE — Yarn 1.x ne résout pas `@amelio/ui-library` depuis le feed ADO
+- **Error**: `error Couldn't find package "@amelio/ui-library" on the "npm" registry`
+- **Root cause**: Yarn 1.x ignore les scoped registries (`@amelio:registry`) déclarés dans `.npmrc` lors du `yarn install`. Il cherche systématiquement `@amelio/ui-library` sur `registry.npmjs.org` au lieu du feed ADO
+- **Tentatives échouées**: `yarn link`, `npm link`, `~/.yarnrc` scoped registry — aucune ne fonctionne avec Yarn 1.x
+- **Fix applied**: Utiliser `npm install` au lieu de `yarn install` pour Performance FE — npm lit correctement `~/.npmrc` et résout `@amelio/ui-library` depuis le feed ADO. Supprimer le `package-lock.json` créé par npm après l'install (ce repo utilise `yarn.lock`)
+- **Workflow fix**: Step 8c réécrit dans `amelio-onboarding.md` — `npm install` + `rm package-lock.json` + vérification `git status`
+
 ### 22. `Amelio.MongoRepository 2.1.3` retiré du feed ADO — seul `3.2.3785` (net10.0) disponible
 - **Error**: `NU1202: Le package Amelio.MongoRepository 3.2.3785 n'est pas compatible avec net8.0`
 - **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
@@ -237,8 +250,10 @@
 | 7c | ✅ | `NUGET_PACKAGES` env var dans `~/.zprofile` (Part 1, macOS) + NuGet.Config user-level avec PAT Packaging (Read) (Part 2) — aucune modification du repo |
 | 7d | ✅ | Aucune copie — fichiers déjà présents après clone + note `Do NOT commit` |
 | 7e | ✅ | `.env` depuis `.env.sample` (priorité) ou template |
-| 8a | ✅ | `~/.npmrc` user-level uniquement, B64 correct (`anything:PAT`) |
-| 8b–8d | ✅ | yarn UI Library + build + yarn Perf FE + dotnet restore Perf BE |
+| 8a | ✅ (corrigé) | `~/.npmrc` user-level avec `_authToken=<PAT>` (raw) — format `_password`+B64 rejeté par npm v10+ |
+| 8b | ✅ | yarn UI Library + build |
+| 8c | ✅ (corrigé) | `npm install` (pas yarn) pour Perf FE + `rm package-lock.json` + vérification `git status` |
+| 8d | ✅ | dotnet restore Perf BE |
 | 8e | ✅ | `npm ci --legacy-peer-deps` + vérification `git diff --name-only` + restauration si package-lock.json modifié |
 | 8f | ✅ | `dotnet restore` + known issues 401 et NU1202 documentés avec workarounds |
 | 9 | ✅ | Extensions par tiers A/B/C/D/E, `windsurf` binary résolu avant usage |
@@ -247,7 +262,12 @@
 | 12 | ✅ | Workspace secondaire optionnel |
 | 13 | ✅ | Checklist finale 12 points, task NEVER done until user confirms |
 
-**Correction appliquée lors de l'audit** :
-- Tous les `skip-worktree` retirés du workflow (Steps 7b, 7c, 7d) — remplacés par des notes `Do NOT commit`. Les `skip-worktree` appliqués sur la machine lors des sessions précédentes ont également été revertés (`--no-skip-worktree`).
+**Corrections appliquées lors de l'audit** :
+- Tous les `skip-worktree` retirés du workflow (Steps 7b, 7c, 7d) — remplacés par des notes `Do NOT commit`
+- Step 7c Part 1 : `NUGET_PACKAGES` env var dans `~/.zprofile` (priorité max sur `$(UserProfile)` du repo)
+- Step 8a : `_authToken` au lieu de `_password`+B64 (npm v10+ rejette l'ancien format)
+- Step 8c : `npm install` au lieu de `yarn install` (Yarn 1.x ignore les scoped ADO registries)
+- `.env.development` dans `Amelio - React` reverté (avait été écrasé par une session précédente)
+- Tous les repos validés propres : 5/5 `git status` vide
 
 

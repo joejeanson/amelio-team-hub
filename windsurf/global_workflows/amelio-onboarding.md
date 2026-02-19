@@ -677,29 +677,21 @@ Tell user:
 Add ADO credentials to the global `~/.npmrc` (created if it doesn't exist):
 
 ```bash
-# Compute B64 = base64("anything:PAT") — username MUST be included before the colon
-B64=$(echo -n "anything:${ADO_PAT}" | base64)
-
-cat >> "${HOME}/.npmrc" << EOF
-//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:username=anything
-//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_password=${B64}
-//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=${GIT_EMAIL}
+cat > "${HOME}/.npmrc" << EOF
+//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_authToken=${ADO_PAT}
 EOF
 echo "Global ~/.npmrc updated"
 ```
 
 On Windows (PowerShell):
 ```powershell
-$B64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("anything:$env:ADO_PAT"))
-Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:username=anything"
-Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_password=$B64"
-Add-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:email=$env:GIT_EMAIL"
+Set-Content "$env:USERPROFILE\.npmrc" "//pkgs.dev.azure.com/ameliodev/_packaging/amelio-performance-feed/npm/registry/:_authToken=$env:ADO_PAT"
 Write-Host "Global ~/.npmrc updated"
 ```
 
-> **Why `~/.npmrc` and not the repo `.npmrc`?** npm/yarn automatically merges the user-level `~/.npmrc` with the project-level `.npmrc`. Credentials in `~/.npmrc` apply to all projects without polluting git history. The repo `.npmrc` only declares the registry URL — that is already committed and must not be modified.
+> **Why `~/.npmrc` and not the repo `.npmrc`?** npm automatically merges the user-level `~/.npmrc` with the project-level `.npmrc`. Credentials in `~/.npmrc` apply to all projects without polluting git history. The repo `.npmrc` only declares the registry URL — that is already committed and must not be modified.
 
-> **B64 formula**: `_password` = `base64("anything:PAT")` — NOT `base64(":PAT")` and NOT the raw PAT.
+> **`_authToken` format**: Use the raw PAT directly as `_authToken`. Do NOT use `_password` + `username` + B64 — that format is rejected by modern npm versions.
 
 ### 8b — UI Library (install + build — REQUIRED before Performance FE)
 ```bash
@@ -709,17 +701,22 @@ The `yarn build` creates the `dist/` folder that Performance FE depends on.
 
 ### 8c — Performance Frontend
 
-**Option 1 (preferred)**: If `@amelio/ui-library` is published on the ADO feed and the PAT has Packaging (Read) scope:
+> **Note**: This project uses `yarn` as its package manager but Yarn 1.x does not correctly resolve scoped ADO registries (`@amelio:registry`) from `.npmrc`. Use `npm install` instead — it reads `~/.npmrc` correctly and resolves `@amelio/ui-library` from the ADO feed.
+
 ```bash
-cd "${FS_DIR}/amelio-performance-fe" && yarn install
+cd "${FS_DIR}/amelio-performance-fe" && npm install
 ```
 
-**Option 2 (fallback — if yarn cannot resolve `@amelio/ui-library` from ADO feed)**: Use `npm link` to link the locally built UI Library:
+After install, remove the `package-lock.json` created by npm (this repo uses yarn.lock, not package-lock.json):
 ```bash
-cd "${FS_DIR}/amelio-ui-library" && npm link
-cd "${FS_DIR}/amelio-performance-fe" && npm link @amelio/ui-library
+rm -f "${FS_DIR}/amelio-performance-fe/package-lock.json"
 ```
-This uses the locally built `dist/` from Step 8b instead of downloading from ADO.
+
+Verify no git-tracked file was modified:
+```bash
+git -C "${FS_DIR}/amelio-performance-fe" status --short
+```
+Expected: empty output.
 
 ### 8d — Performance Backend
 ```bash
