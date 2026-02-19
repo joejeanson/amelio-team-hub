@@ -636,7 +636,8 @@ Ask the user with a multiple-choice question:
 - **A**: Essential only (23 — ESLint, GitLens, C#, Tailwind, Docker, Vitest, MongoDB...)
 - **B**: Essential + Visual (27 — adds Material Icons, Folder Color, Mermaid, Color Highlight)
 - **C**: Essential + Visual + Extras (31 — adds PDF viewer, ADO Boards sidebar, LiveServer, Qodo AI tests)
-- **D**: Skip extension installation
+- **D**: I want to pick my own extensions — just show me the list
+- **E**: Skip — I'll install extensions later on my own
 
 Extension files are in `${TEAM_DIR}/ide-settings/`:
 
@@ -688,6 +689,16 @@ Get-Content "${TEAM_DIR}/ide-settings/extensions-extras.txt" | Where-Object { $_
 ```
 
 Report: X succeeded, Y failed. If any failed, propose manual install.
+
+For **D** (manual pick), present the full list of available extensions from all 3 files as a numbered checklist:
+1. Read all 3 extension files (`extensions-team.txt`, `extensions-optional.txt`, `extensions-extras.txt`)
+2. Present each extension with its category (Essential / Visual / Extra) and a checkbox-style list
+3. Ask the user to select which ones they want (by number or range, e.g. "1-15, 18, 22")
+4. Install only the selected extensions using the same `windsurf --install-extension` command
+
+For **E** (skip), tell the user:
+> Extension files are available in `${TEAM_DIR}/ide-settings/` if you want to install them later.
+> You can run `windsurf --install-extension <ext-id> --force` for each one, or re-run this step.
 
 ---
 
