@@ -640,15 +640,35 @@ cat "${HOME_DIR}/.nuget/NuGet/NuGet.Config"
 Expected: file contains `<packageSourceCredentials>` with your PAT and `<config>` with `globalPackagesFolder`.
 
 ### 7d — Legacy Frontend config
+
+Copy `.env.development` unconditionally (safe — not git-tracked):
 ```bash
 cp "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
-cp "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
+```
+
+Copy `.env.local` **only if it does not already exist** — never overwrite existing local secrets:
+```bash
+if [ ! -f "${FS_DIR}/Amelio - React/.env.local" ]; then
+  cp "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
+else
+  echo "  .env.local already exists — skipping to preserve existing config"
+fi
 ```
 
 On Windows (PowerShell):
 ```powershell
 Copy-Item "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
-Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
+if (-not (Test-Path "${FS_DIR}/Amelio - React/.env.local")) {
+  Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
+} else {
+  Write-Host "  .env.local already exists — skipping to preserve existing config"
+}
+```
+
+Protect both files from git (prevents accidental commits of local secrets):
+```bash
+git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
+git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.local
 ```
 
 ### 7e — Performance Frontend config
