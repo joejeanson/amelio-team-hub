@@ -395,6 +395,9 @@ Get-ChildItem "${TEAM_DIR}/windsurf/skills" -Directory | ForEach-Object {
 ```
 
 ### 4d — Deploy global workflows
+
+> **🚫 NEVER deploy workflow files into the cloned ADO repos** (e.g. `amelio-ui-library/.windsurf/workflows/`, `amelio-performance-backend/.windsurf/workflows/`). Those files would be git-tracked and committed to shared repos. Workflows are **personal/machine-level config** and must ONLY go to the global Windsurf location below.
+
 ```bash
 mkdir -p "${HOME_DIR}/.codeium/windsurf/global_workflows"
 cp "${TEAM_DIR}/windsurf/global_workflows/"*.md "${HOME_DIR}/.codeium/windsurf/global_workflows/"
@@ -628,7 +631,13 @@ Read the template from `${CFG_DIR}/nuget/NuGet.Config.template`, replace:
 
 Save to: `${HOME_DIR}/.nuget/NuGet/NuGet.Config`
 
-> **CRITICAL**: Without this config, `dotnet restore` for Legacy Backend will fail with `401 Unauthorized` on the Amelio.MongoRepository feed. Ensure the PAT has **Packaging (Read)** scope.
+> **CRITICAL**: Without this config, `dotnet restore` for Legacy Backend will fail with `401 Unauthorized` on the Amelio.MongoRepository feed. **The most common cause is a PAT missing the Packaging (Read) scope** — ensure the PAT used in Step 0d has both **Code (Read & Write)** and **Packaging (Read)** scopes.
+
+Verify the generated file looks correct:
+```bash
+cat "${HOME_DIR}/.nuget/NuGet/NuGet.Config"
+```
+Expected: file contains `<packageSourceCredentials>` with your PAT and `<config>` with `globalPackagesFolder`.
 
 ### 7d — Legacy Frontend config
 ```bash
@@ -640,12 +649,6 @@ On Windows (PowerShell):
 ```powershell
 Copy-Item "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
 Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
-```
-
-Protect from git (cross-platform):
-```bash
-git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
-git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.local
 ```
 
 ### 7e — Performance Frontend config
@@ -740,12 +743,33 @@ cd "${FS_DIR}/Amelio - React" && npm ci --legacy-peer-deps
 ```
 **IMPORTANT**: This project uses `npm ci` (not `npm install`) with `--legacy-peer-deps` due to React 18 peer dependency conflicts. `npm ci` installs from the existing `package-lock.json` **without modifying it** — this prevents accidental diffs on a git-tracked file. Do NOT use `yarn`.
 
+> **🚫 NEVER run `npm install` here** — it WILL modify `package-lock.json` (a git-tracked file), creating an unwanted diff. Always use `npm ci`.
+
+After install, verify `package-lock.json` was NOT modified:
+```bash
+git -C "${FS_DIR}/Amelio - React" diff --name-only
+```
+Expected: empty output. If `package-lock.json` appears, restore it immediately:
+```bash
+git -C "${FS_DIR}/Amelio - React" checkout package-lock.json
+```
+
 ### 8f — Legacy Backend
 ```bash
 cd "${FS_DIR}/Amelio - Back-End" && dotnet restore
 ```
 
-> **Known issue**: If `dotnet restore` fails with `401 Unauthorized` on `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`, the PAT does not have **Packaging (Read)** scope for the NuGet feed. Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, update `${HOME_DIR}/.nuget/NuGet/NuGet.Config` with the new PAT, and retry. If the issue persists, log the error and continue — the Legacy Backend can be restored later.
+> **Known issue — 401 Unauthorized**: If `dotnet restore` fails with `401 Unauthorized` on the `Amelio.MongoRepository` feed, the PAT does not have **Packaging (Read)** scope. Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, update `${HOME_DIR}/.nuget/NuGet/NuGet.Config` with the new PAT, and retry.
+
+> **Known issue — NU1202 (package incompatible with net8.0)**: If `dotnet restore` fails with `NU1202: Amelio.MongoRepository 3.x.x n'est pas compatible avec net8.0`, the ADO feed only publishes a newer version targeting net10.0. The projects require `2.1.3` (net8.0) which is no longer on the feed. **Workaround**: copy the package from another developer's NuGet cache:
+> ```bash
+> # Ask a team member for their NuGet cache path, or check other users on this machine
+> find /Users -name "amelio.mongorepository.2.1.3.nupkg" 2>/dev/null
+> # Then copy to your cache:
+> mkdir -p "${HOME_DIR}/.nuget/packages/amelio.mongorepository/2.1.3"
+> cp -R "<SOURCE_PATH>/2.1.3/"* "${HOME_DIR}/.nuget/packages/amelio.mongorepository/2.1.3/"
+> ```
+> After copying, re-run `dotnet restore` — NuGet will use the local cache instead of downloading from the feed.
 
 Verify NuGet restore succeeded (macOS):
 ```bash

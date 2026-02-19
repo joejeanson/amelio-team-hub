@@ -6,12 +6,22 @@
   </packageSources>
   <packageSourceCredentials>
     <Amelio.MongoRepository>
-        <add key="Username" value="anything" />
-        <add key="ClearTextPassword" value="<REPLACE_WITH_NUGET_PAT>" />
-      </Amelio.MongoRepository>
+      <add key="Username" value="anything" />
+      <add key="ClearTextPassword" value="<REPLACE_WITH_NUGET_PAT>" />
+    </Amelio.MongoRepository>
   </packageSourceCredentials>
+  <packageSourceMapping>
+    <packageSource key="Amelio.MongoRepository">
+      <package pattern="Amelio.*" />
+      <package pattern="OPIA.*" />
+    </packageSource>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+  </packageSourceMapping>
   <config>
     <add key="globalPackagesFolder" value="<HOME_DIR>/.nuget/packages" />
     <add key="repositoryPath" value="<HOME_DIR>/.nuget/packages" />
+    <add key="maxHttpRequestsPerSource" value="16" />
   </config>
 </configuration>

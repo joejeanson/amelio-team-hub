@@ -81,17 +81,67 @@
 - **Resolution**: After onboarding, rotate the PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens
 - **Workflow note**: Step 0d already warns against this — ensure future users follow the `.env` approach
 
+### 13. Legacy Backend dotnet restore — 401 Unauthorized on NuGet feed
+- **Error**: `NU1301: Response status code does not indicate success: 401 (Unauthorized)`
+- **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
+- **Root cause (initial)**: PAT missing **Packaging (Read)** scope
+- **Root cause (workspace reload — `nuget-restore-error-after-open-new-workspace.log`)**: The user-level `~/.nuget/NuGet/NuGet.Config` was missing the `<packageSourceMapping>` section. Without it, NuGet cannot correctly route `Amelio.*` / `OPIA.*` packages to the private ADO feed when workspace inputs change — even with valid credentials. The repo-level `NuGet.config` has the mapping but the user-level config overrides/conflicts with it.
+- **Impact**: `dotnet restore` fails for: `OPIA.API.V2`, `OPIA.Business.V2`, `OPIA.Repository.V2`, `OPIA.Scheduler.V2`, `OPIA.Web.V2`, `OPIA.Uitlity.V2`, `DatabaseMigrator.V2`, `Tests/OPIA.API.V2.Tests`
+- **Full error logs**: `nuget-restore-error.log` (initial) and `nuget-restore-error-after-open-new-workspace.log` (workspace reload)
+- **Fix applied**:
+  1. Added `<packageSourceMapping>` + `maxHttpRequestsPerSource` to `~/.nuget/NuGet/NuGet.Config` on this machine
+  2. Updated `config-files/nuget/NuGet.Config.template` with the same additions
+  3. Updated Step 7c in `amelio-onboarding.md` with explicit instructions and verification step
+- **Workflow fix**: Step 7c now includes `packageSourceMapping` in template and a `cat` verification command
+
+### 20. Workflows déployés dans les repos au lieu des globales Windsurf
+- **Error**: N/A — erreur d'architecture
+- **Cause**: Une ancienne version du workflow d'onboarding déployait les fichiers `.windsurf/workflows/` directement dans les repos ADO au lieu du chemin global Windsurf
+- **Chemin global correct (macOS)**: `~/.codeium/windsurf/global_workflows/`
+- **Fix applied**:
+  1. Les workflows sont déjà correctement présents dans `~/.codeium/windsurf/global_workflows/` (`amelio-onboarding.md`, `create-perfo-be-pr.md`, `create-perfo-fe-pr.md`)
+  2. Aucun `.windsurf/` parasite trouvé dans les repos ADO (déjà nettoyé)
+  3. Ajout d'une note `🚫 NEVER` explicite dans Step 4d du workflow d'onboarding pour prévenir toute future régression
+- **Workflow fix**: Step 4d contient maintenant un avertissement explicite interdisant le déploiement dans les repos
+
+### 21b. Workflow d'onboarding a modifié `package-lock.json` (OMAGE 2)
+- **Error**: N/A — modification non sollicitée d'un fichier git-tracké
+- **Root cause**: Step 8e utilisait `npm install` au lieu de `npm ci`, ce qui modifie `package-lock.json` (fichier git-tracké)
+- **Fix applied**:
+  - Step 8e — note `🚫 NEVER run npm install` ajoutée + commande de vérification `git diff --name-only` après install + commande de restauration si `package-lock.json` apparaît
+- **Workflow fix**: Step 8e corrigé dans `amelio-onboarding.md`
+
+### 22. `Amelio.MongoRepository 2.1.3` retiré du feed ADO — seul `3.2.3785` (net10.0) disponible
+- **Error**: `NU1202: Le package Amelio.MongoRepository 3.2.3785 n'est pas compatible avec net8.0`
+- **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
+- **Cause**: Le feed ADO ne contient plus que la version `3.2.3785` qui cible `net10.0`. Les projets Legacy Backend demandent `2.1.3` (net8.0) qui n'est plus publiée sur le feed
+- **Versions disponibles sur le feed**: `["3.2.3785"]` — `2.1.3` absente
+- **Fix applied (workaround)**: Le `.nupkg` `2.1.3` était présent dans le cache NuGet de l'utilisateur `j-mini` sur la même machine. Copié vers le cache `devtest` :
+  ```bash
+  mkdir -p ~/.nuget/packages/amelio.mongorepository/2.1.3
+  cp -R /Users/j-mini/.nuget/packages/amelio.mongorepository/2.1.3/* ~/.nuget/packages/amelio.mongorepository/2.1.3/
+  ```
+- **Résultat**: `dotnet restore` réussit — NuGet utilise le cache local `2.1.3` au lieu de télécharger `3.2.3785` du feed
+- **Workaround pour nouveaux devs**: Copier le dossier `~/.nuget/packages/amelio.mongorepository/2.1.3/` depuis une machine existante (ex: `j-mini`) vers la nouvelle machine
+- **À investiguer (long terme)**:
+  - La version `2.1.3` a-t-elle été intentionnellement retirée du feed ?
+  - Faut-il republier `2.1.3` sur le feed pour que les nouveaux devs puissent restore sans workaround ?
+  - Ou migrer les projets Legacy Backend vers `net10.0` + `3.2.3785` ?
+- **Workflow fix**: Ajouter une étape dans Step 8f pour détecter et appliquer ce workaround si nécessaire
+
 ---
 
 ## ❌ UNRESOLVED
 
-### 13. Legacy Backend dotnet restore — 401 Unauthorized on NuGet feed
-- **Error**: `NU1301: Response status code does not indicate success: 401 (Unauthorized)`
-- **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
-- **Cause**: The ADO PAT used during this session does not have **Packaging (Read)** scope for the NuGet feed
-- **Impact**: `dotnet restore` fails for: `OPIA.API.V2`, `OPIA.Business.V2`, `OPIA.Repository.V2`, `OPIA.Scheduler.V2`, `OPIA.Web.V2`, `OPIA.Uitlity.V2`, `DatabaseMigrator.V2`, `Tests/OPIA.API.V2.Tests`
-- **Full error log**: See `nuget-restore-error.log` at the root of this repo
-- **Resolution**: Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, then update `~/.nuget/NuGet/NuGet.Config`
+### 21a. Workflow d'onboarding écrase `.env.local` sans protection git (OMAGE 1)
+- **Error**: N/A — modification non sollicitée d'un fichier git-tracké
+- **Root cause**: Step 7d copie `.env.local.template` vers `.env.local` sans vérifier si le fichier existe déjà et sans protéger le fichier avec `skip-worktree`. Si `.env.local` contient déjà des secrets/configs locales (ex: tokens), ils sont silencieusement écrasés. De plus, toute modification ultérieure de `.env.local` apparaît comme un diff git-tracké risquant d'être committé accidentellement.
+- **Impact**: Perte de configs locales existantes + risque de commit accidentel de secrets
+- **À investiguer**:
+  - Faut-il ajouter une copie conditionnelle (`[ ! -f ]`) dans Step 7d ?
+  - Faut-il appliquer `git update-index --skip-worktree .env.local` après la copie ?
+  - Ou faut-il ajouter `.env.local` au `.gitignore` du repo `Amelio - React` ?
+- **Workaround actuel**: Vérifier manuellement `git status` après Step 7d et appliquer `git update-index --skip-worktree .env.local` si nécessaire
 
 ### 14. MongoDB Freemium database not imported
 - **Status**: Skipped — dump not available on this machine
@@ -142,26 +192,4 @@
   3. Check for existing file before writing — error if file already exists
 - **Workflow fix**: Step 10 now includes filename selection question, naming convention note, and existence check
 
-### 20. Workflows déployés dans les repos au lieu des globales Windsurf
-- **Error**: N/A — erreur d'architecture
-- **Cause**: Le workflow d'onboarding a déployé des fichiers `.windsurf/workflows/` (ex: `create-perfo-fe-pr.md`, `create-perfo-be-pr.md`) **directement dans les repos** (`amelio-ui-library/`, `amelio-performance-backend/`), alors qu'ils devraient être dans les **workflows globaux Windsurf** (`~/.windsurf/workflows/` ou équivalent global)
-- **Problème 1 — Git tracking**: Ces fichiers `.windsurf/workflows/` à l'intérieur des repos sont **suivis par git** et seront donc commités/pushés, ce qui n'est pas souhaitable (configs personnelles/locales)
-- **Problème 2 — Mauvais emplacement**: Les workflows Windsurf globaux (accessibles depuis n'importe quel workspace) n'ont pas besoin d'être dans chaque repo. Les déployer dans les repos crée de la duplication et pollue l'historique git
-- **À investiguer**:
-  - Pourquoi le workflow d'onboarding a-t-il choisi de déployer dans les repos plutôt que dans les globales ?
-  - Quel est le bon chemin pour les workflows globaux Windsurf sur macOS ?
-  - Faut-il ajouter `.windsurf/` au `.gitignore` de chaque repo concerné ?
-  - Ou faut-il déplacer ces workflows vers un emplacement global et les retirer des repos ?
-- **Impact**: Risque de commiter des configs personnelles dans les repos partagés
-
-### 21. Workflow d'onboarding a modifié des fichiers git-trackés sans avertissement (OMAGE 1 & 2)
-- **Error**: N/A — modification non sollicitée de fichiers versionnés
-- **Cause**: Le workflow d'onboarding a modifié des fichiers git-trackés dans `amelio-performance-fe` et `Amelio - React` sans avertir l'utilisateur :
-  - **OMAGE 1** — `.env.local` (`Amelio - React`) : fichier modifié alors qu'il contient des secrets/configs locales sensibles
-  - **OMAGE 2** — `package-lock.json` (`Amelio - React`) : fichier de lock modifié, ce qui peut introduire des diffs non intentionnels dans le repo et casser la reproductibilité des builds
-- **À investiguer**:
-  - Quelle étape du workflow a déclenché ces modifications ?
-  - Le workflow devrait-il vérifier l'état git (`git status`) avant et après chaque étape pour détecter les fichiers modifiés ?
-  - Faut-il ajouter une étape de validation explicite avant toute opération susceptible de modifier des fichiers git-trackés ?
-- **Impact**: Risque de commiter accidentellement des secrets (`.env.local`) ou des diffs de lock non voulus (`package-lock.json`)
 
