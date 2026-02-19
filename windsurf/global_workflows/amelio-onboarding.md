@@ -522,44 +522,71 @@ Expected: 5 containers running (amelio_mongodb, dev_db, test_db, dev_cache, mail
 
 The MongoDB dump (`DB_Freemium/`) contains ~242 compressed BSON files (~286 MB). It is **not in the git repo** — it is hosted on SharePoint.
 
-**Step 1 — Download the dump from SharePoint:**
+**Step 1 — Open SharePoint and trigger the download:**
 
+Tell the user:
 > 🔐 **SharePoint access required** — you must be logged in with your `@amelio.co` Microsoft account.
-> URL: https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=DGMKIH
+> I'm opening the SharePoint folder now. Once the page loads, click **Download** in the top toolbar — SharePoint will automatically package the folder as a zip and save it to your `Downloads/` folder.
 
-1. Open the URL above in your browser
-2. Click **Download** (top toolbar) — SharePoint will package the folder as a zip automatically
-3. Once downloaded, extract it into `${AMELIO_DIR}/`:
-
+Open the SharePoint link in the default browser:
 ```bash
-cd "${AMELIO_DIR}" && unzip ~/Downloads/DB_Freemium.zip -d . && rm ~/Downloads/DB_Freemium.zip
+open "https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=DGMKIH"
 ```
 
 On Windows (PowerShell):
 ```powershell
-Expand-Archive -Path "$env:USERPROFILE\Downloads\DB_Freemium.zip" -DestinationPath "${AMELIO_DIR}" -Force
-Remove-Item "$env:USERPROFILE\Downloads\DB_Freemium.zip"
+Start-Process "https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=DGMKIH"
 ```
 
-> **Note**: The zip filename from SharePoint may differ (e.g. `DB_Freemium-[date].zip`). Adjust the filename in the command above if needed.
+Ask the user:
+- **A**: The zip has finished downloading to my `Downloads/` folder
+- **B**: I can't access SharePoint right now — skip for now
+
+If B, skip and note that Legacy Backend will have no data on first run.
+
+**Step 2 — Auto-detect and extract the zip:**
+
+Once the user confirms (A), detect the zip automatically — SharePoint may name it `DB_Freemium.zip` or `DB_Freemium-[timestamp].zip`:
+
+```bash
+DOWNLOADS="${HOME}/Downloads"
+DB_ZIP=$(ls -t "${DOWNLOADS}"/DB_Freemium*.zip 2>/dev/null | head -1)
+if [ -z "$DB_ZIP" ]; then
+  echo "ERROR: No DB_Freemium*.zip found in ~/Downloads/ — check the download completed."
+else
+  echo "Found: ${DB_ZIP}"
+  mkdir -p "${AMELIO_DIR}/DB_Freemium"
+  unzip -o "${DB_ZIP}" -d "${AMELIO_DIR}"
+  rm "${DB_ZIP}"
+  echo "Extracted to ${AMELIO_DIR}/DB_Freemium/"
+fi
+```
+
+On Windows (PowerShell):
+```powershell
+$downloads = "$env:USERPROFILE\Downloads"
+$dbZip = Get-ChildItem "$downloads\DB_Freemium*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $dbZip) {
+  Write-Host "ERROR: No DB_Freemium*.zip found in Downloads — check the download completed."
+} else {
+  Write-Host "Found: $($dbZip.FullName)"
+  New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
+  Expand-Archive -Path $dbZip.FullName -DestinationPath "${AMELIO_DIR}" -Force
+  Remove-Item $dbZip.FullName
+  Write-Host "Extracted to ${AMELIO_DIR}\DB_Freemium\"
+}
+```
 
 Verify the dump is in place:
 ```bash
 ls "${AMELIO_DIR}/DB_Freemium/Freemium/" | head -5
 ```
-Expected: `.bson.gz` and `.metadata.json.gz` files.
+Expected: `.bson.gz` and `.metadata.json.gz` files. If the folder structure is different (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust `DB_PATH` in the next step accordingly.
 
-Ask the user:
-- **A**: DB_Freemium is downloaded and extracted at `${AMELIO_DIR}/DB_Freemium/`
-- **B**: It's in a different location (I will provide the path)
-- **C**: I can't access SharePoint right now — skip for now
+**Step 3 — Import into MongoDB:**
 
-If C, skip and note that Legacy Backend will have no data on first run.
-
-**Step 2 — Import into MongoDB:**
-
-If A, use: `DB_PATH="${AMELIO_DIR}/DB_Freemium/Freemium"`
-If B, ask for the path and set `DB_PATH` accordingly.
+Use: `DB_PATH="${AMELIO_DIR}/DB_Freemium/Freemium"`
+If the structure differs (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust accordingly.
 
 ```bash
 mongorestore --host localhost:27017 \
