@@ -282,6 +282,8 @@ winget install --id Docker.DockerDesktop -e
 
 **After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
 
+> **Note**: Colima (headless Docker Engine) is **macOS only**. On Windows, Docker Desktop is the standard approach.
+
 ### 1d — Docker Engine (verify running)
 
 Verify Docker is available and running:
@@ -453,7 +455,7 @@ Write-Host "=== Global Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/winds
 
 ## Step 5 — Docker Containers Setup
 
-Ensure Docker Desktop is running before this step.
+Ensure Docker Engine is running before this step (Docker Desktop or Colima).
 
 ### 5a — Start MongoDB container (for Legacy Backend)
 ```bash
@@ -462,8 +464,10 @@ docker run -d --name amelio_mongodb \
   -e MONGO_INITDB_ROOT_USERNAME=ameliodb \
   -e MONGO_INITDB_ROOT_PASSWORD=ameliodb \
   --restart unless-stopped \
-  mongo --auth
+  mongo
 ```
+
+> **Note**: Authentication is enabled automatically when `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` are set — no need to pass `--auth` explicitly.
 
 If container already exists, start it:
 ```bash
