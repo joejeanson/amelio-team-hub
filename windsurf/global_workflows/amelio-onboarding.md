@@ -16,7 +16,7 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **🚫 NEVER modify any git-tracked file inside the 5 cloned ADO repositories.** This includes `.npmrc`, `appsettings.json`, `docker-compose.yml`, `package.json`, or ANY other file tracked by git. Always verify with `git status` before touching a file. For local overrides, use ONLY files already listed in `.gitignore` (e.g. `docker-compose.override.yml`, `appsettings.Local.json`, `appsettings.Development.json` if gitignored). Credentials and local config belong in **user-level files** (`~/.npmrc`, `~/.nuget/NuGet/NuGet.Config`) — never in repo files.
 
 ## CONTEXT
-The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
+The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Template.code-workspace` in Windsurf.
 The first folder visible in the sidebar is **"👥 — 🏠 Amelio Team Hub"** — this IS the team hub repo.
 The user dragged this workflow file into the Cascade chat panel to start the onboarding.
 All source files (skills, workflows, rules, extensions lists, workspace template, config files) are **inside this repo**.
@@ -897,7 +897,7 @@ For **E** (skip), tell the user:
 
 ## Step 10 — Generate Personalized Workspace
 
-Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Simple.code-workspace`.
+Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Template.code-workspace`.
 
 ### If `INSTALL_MODE` = `team-hub-parent`
 Modifications to apply:
@@ -919,7 +919,7 @@ Modifications to apply:
 - **C**: `[FirstName][LastName].code-workspace` (e.g. `JonathanJeanson.code-workspace`)
 - **D**: I want a different name (I will specify)
 
-> **Note**: The template file is named `Simple.code-workspace` for historical reasons — do NOT use `Simple_` as a prefix for personal workspace files. Use `Amelio_` or just the employee name.
+> **Note**: The template file is named `Template.code-workspace`. Do NOT use `Template_` or `Simple_` as a prefix for personal workspace files. Use `Amelio_` or just the employee name.
 
 **IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
 ```bash

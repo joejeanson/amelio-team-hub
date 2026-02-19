@@ -7,7 +7,7 @@
 ## Quick Start
 
 1. Clone this repo: `git clone https://github.com/joejeanson/amelio-team-hub.git`
-2. Open `windsurf/workspace/Simple.code-workspace` in **Windsurf IDE**
+2. Open `windsurf/workspace/Template.code-workspace` in **Windsurf IDE**
 3. The Team Hub folder is visible in the sidebar ("👥 — 🏠 Amelio Team Hub")
 4. Drag the file `windsurf/global_workflows/amelio-onboarding.md` into the **Cascade chat panel**
 5. Cascade will read the workflow and start the interactive onboarding
@@ -128,7 +128,7 @@ For manual updates only:
 
 | File | Description |
 |------|-------------|
-| `Simple.code-workspace` | Multi-root workspace with terminal profiles (macOS + Windows + Linux) |
+| `Template.code-workspace` | Multi-root workspace with terminal profiles (macOS + Windows + Linux) |
 
 ## Bundle Structure
 
@@ -172,7 +172,7 @@ amelio-team-hub/                          <- this repo (= AMELIO_DIR in parent m
 │   ├── memories/
 │   │   └── global_rules.md               -> ~/.codeium/windsurf/memories/
 │   └── workspace/
-│       └── Simple.code-workspace         <- Template (paths replaced at install)
+│       └── Template.code-workspace       <- Template (paths replaced at install)
 │
 │  ── Created by onboarding (Mode A: parent) ──────────────────
 ├── Documentations/                       <- gitignored

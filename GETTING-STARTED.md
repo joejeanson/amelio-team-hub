@@ -21,7 +21,7 @@ git clone https://github.com/joejeanson/amelio-team-hub.git
 Open the file below in **Windsurf IDE**:
 
 ```
-amelio-team-hub/windsurf/workspace/Simple.code-workspace
+amelio-team-hub/windsurf/workspace/Template.code-workspace
 ```
 
 > You can open it via `File > Open Workspace from File...` or drag it onto the IDE.

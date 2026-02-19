@@ -41,7 +41,7 @@ cp -R /Users/m--server/Amelio_primary/DB_Freemium/ /Users/Shared/DB_Freemium/
 ### 1e — Run the onboarding test
 
 1. Open Windsurf
-2. File → Open Workspace from File → select `~/Desktop/amelio-team-hub/windsurf/workspace/Simple.code-workspace`
+2. File → Open Workspace from File → select `~/Desktop/amelio-team-hub/windsurf/workspace/Template.code-workspace`
 3. The sidebar should show **"👥 — 🏠 Amelio Team Hub"** as the first folder
 4. In the sidebar, navigate to `windsurf/global_workflows/amelio-onboarding.md`
 5. **Drag that file into the Cascade chat panel**
@@ -133,7 +133,7 @@ git clone https://github.com/joejeanson/amelio-team-hub.git
 ### 2e — Run the onboarding test
 
 1. Open Windsurf
-2. File → Open Workspace from File → select `C:\Users\TestDev\Desktop\amelio-team-hub\windsurf\workspace\Simple.code-workspace`
+2. File → Open Workspace from File → select `C:\Users\TestDev\Desktop\amelio-team-hub\windsurf\workspace\Template.code-workspace`
 3. Sidebar should show **"👥 — 🏠 Amelio Team Hub"**
 4. Navigate to `windsurf/global_workflows/amelio-onboarding.md`
 5. **Drag that file into the Cascade chat panel**

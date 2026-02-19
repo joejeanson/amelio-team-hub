@@ -10,7 +10,7 @@
 
 # Workspace files (personal)
 *.code-workspace
-!windsurf/workspace/Simple.code-workspace
+!windsurf/workspace/Template.code-workspace
 
 # When amelio-team-hub is used as parent directory
 REPOs/

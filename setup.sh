@@ -169,7 +169,7 @@ if [[ -f "$SOURCE/memories/global_rules.md" ]]; then
 fi
 
 # ── Workspace template ──────────────────────────────────────────────────────
-WS_TEMPLATE="$SOURCE/workspace/Simple.code-workspace"
+WS_TEMPLATE="$SOURCE/workspace/Template.code-workspace"
 if [[ -f "$WS_TEMPLATE" ]]; then
     echo -e "${BLUE}📦 Workspace${NC}"
     WS_USER=$(whoami)
