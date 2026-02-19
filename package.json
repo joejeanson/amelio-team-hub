@@ -4,8 +4,8 @@
   "description": "Amelio Team Hub — Onboarding, code practices, IDE settings, and shared resources",
   "private": true,
   "scripts": {
-    "setup:check": "bash setup.sh --check",
-    "setup:install": "bash setup.sh --install"
+    "🔍 setup:check": "bash setup.sh --check",
+    "🚀 setup:install": "bash setup.sh --install"
   },
   "repository": {
     "type": "git",
