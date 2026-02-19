@@ -4,14 +4,21 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 
 # Amelio Onboarding
 
-## BEHAVIOR RULES (MANDATORY)
-- **NEVER interrupt or stop mid-phase** — execute each step fully, diagnose errors inline
-- **ALWAYS use multiple-choice questions** when user input is needed — never open-ended
-- **Task is NEVER complete** until the user explicitly confirms — keep asking after final step
-- **On error**: show the error, propose 2-3 fix options, let user choose, then continue
-- **Chat in the language chosen by the user in Step 0a** (`CHAT_LANG`), all generated files/code/configs in **English**
-- **Do NOT skip steps** — if a tool is already installed, confirm version and move on
-- **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
+## BEHAVIOR RULES (MANDATORY — READ BEFORE DOING ANYTHING ELSE)
+
+> ⚠️ **THIS WORKFLOW MUST BE EXECUTED SEQUENTIALLY, STEP BY STEP, WITHOUT SKIPPING ANYTHING.**
+> When this workflow is invoked, Cascade MUST start at **Step 0a** immediately — no summary, no assumptions, no shortcuts.
+> The user invoking this workflow is a new developer who needs full guidance. Treat every step as required unless explicitly marked optional.
+
+- **START AT STEP 0a** — the very first action is always to display the welcome message and ask for the preferred language. Do NOT skip this, even if the user seems to already know what they want.
+- **NEVER skip a step** — if a tool is already installed, confirm its version and move on. Do NOT assume anything is already set up.
+- **NEVER summarize or compress steps** — execute each sub-step fully, run each command, show each result.
+- **ALWAYS use multiple-choice questions** when user input is needed — never open-ended questions.
+- **NEVER interrupt or stop mid-phase** — execute each step fully, diagnose errors inline.
+- **Task is NEVER complete** until the user explicitly confirms at Step 13 — keep asking after the final step.
+- **On error**: show the error, propose 2-3 fix options as multiple-choice, let user choose, then continue.
+- **Chat in the language chosen by the user in Step 0a** (`CHAT_LANG`), all generated files/code/configs in **English**.
+- **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything.
 - **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (`winget`) since Git Bash isn't installed yet.
 - **🚫 NEVER modify any git-tracked file inside the 5 cloned ADO repositories.** This includes `.npmrc`, `appsettings.json`, `docker-compose.yml`, `package.json`, or ANY other file tracked by git. Always verify with `git status` before touching a file. For local overrides, use ONLY files already listed in `.gitignore` (e.g. `docker-compose.override.yml`, `appsettings.Local.json`, `appsettings.Development.json` if gitignored). Credentials and local config belong in **user-level files** (`~/.npmrc`, `~/.nuget/NuGet/NuGet.Config`) — never in repo files.
 
