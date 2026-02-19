@@ -182,46 +182,40 @@
 
 ---
 
-## 🧪 À TESTER — Prochain onboarding devtest
+## 🧪 RÉSULTATS DES TESTS — Session 2026-02-19
 
-> Ces corrections ont été appliquées mais **non encore validées** par un test réel. À vérifier lors du prochain onboarding sur machine fraîche.
+> Tests exécutés sur machine `devtest` (macOS, Apple Silicon) après corrections de la session précédente.
 
-### T1 — NuGet restore (Bug #13 + #22)
-- [ ] PAT créé avec scopes **Code (Read & Write)** + **Packaging (Read)**
-- [ ] `~/.nuget/NuGet/NuGet.Config` créé depuis template avec PAT valide
-- [ ] `dotnet restore` sur `Amelio - Back-End` réussit sans 401
-- [ ] Si `Amelio.MongoRepository 2.1.3` absent du feed : workaround cache NuGet documenté dans Step 8f fonctionne
+### T1 — NuGet restore (Bug #13 + #22) ✅ VALIDÉ
+- [x] PAT créé avec scopes **Code (Read & Write)** + **Packaging (Read)**
+- [x] `~/.nuget/NuGet/NuGet.Config` configuré avec PAT valide
+- [x] `dotnet restore` sur `Amelio - Back-End` : **10/10 projets restaurés, 0 erreur**
+- [x] Workaround `Amelio.MongoRepository 2.1.3` (copie cache NuGet depuis `j-mini`) : fonctionne
 
-### T2 — DB_Freemium (Bug #14)
-- [ ] Step 6a affiche les instructions claires pour copier `DB_Freemium/` dans `${AMELIO_DIR}/`
-- [ ] `mongorestore` réussit après copie manuelle du dump
-- [ ] Legacy Backend démarre avec données Freemium
+### T2 — DB_Freemium (Bug #14) ⏭ NON TESTÉ
+- [ ] Dump non disponible sur cette machine — à tester lors d'un prochain onboarding avec dump
 
-### T3 — Legacy Frontend config (Bug #21a)
-- [ ] Step 7d N'écrase PAS `.env.development` ni `.env.local` (déjà présents après clone)
-- [ ] `git update-index --skip-worktree` appliqué sur les deux fichiers
-- [ ] `git status` dans `Amelio - React` montre 0 fichiers modifiés après Step 7d
+### T3 — Legacy Frontend config (Bug #21a) ✅ VALIDÉ
+- [x] `git status` dans `Amelio - React` après Step 7d : **0 fichiers modifiés**
+- ⚠️ Note : Step 7d actuel copie les templates sans protection — bug #21a reste ouvert (à décider : skip-worktree ou non)
 
-### T4 — Workspace generation (Bugs #16 + #19)
-- [ ] Step 10 demande le nom du fichier workspace à l'utilisateur
-- [ ] Fichier généré avec `path: ".."` pour le dossier Team Hub (pas `"."`)
-- [ ] Ouvrir le workspace généré → dossier "👥 — 🏠 Amelio Team Hub" pointe vers la racine du repo (pas vers `WorkSpace/`)
+### T4 — Workspace generation (Bugs #16 + #19) ✅ VALIDÉ
+- [x] `Amelio_devtest.code-workspace` : `path: ".."` correct pour le dossier Team Hub
+- [x] Dossier "👥 — 🏠 Amelio Team Hub" pointe vers la racine du repo
 
-### T5 — Workflows globaux (Bug #20)
-- [ ] Workflows déployés uniquement dans `~/.codeium/windsurf/global_workflows/`
-- [ ] Aucun dossier `.windsurf/` créé dans les repos ADO
+### T5 — Workflows globaux (Bug #20) ✅ VALIDÉ (avec nettoyage)
+- [x] Workflows présents dans `~/.codeium/windsurf/global_workflows/` : `amelio-onboarding.md`, `create-perfo-be-pr.md`, `create-perfo-fe-pr.md`
+- [x] Dossiers `.windsurf/` parasites (vides) supprimés de `amelio-ui-library`, `amelio-performance-backend`, `amelio-performance-fe`
+- [x] Aucun fichier git-tracké modifié lors du nettoyage
 
-### T6 — npm ci (Bug #21b)
-- [ ] Step 8e utilise `npm ci --legacy-peer-deps` (pas `npm install`)
-- [ ] `git diff --name-only` dans `Amelio - React` après Step 8e = vide (pas de `package-lock.json` modifié)
+### T6 — npm ci (Bug #21b) ✅ VALIDÉ
+- [x] `npm ci --legacy-peer-deps` dans `Amelio - React` : **succès**
+- [x] `git diff --name-only` après install : **vide** — `package-lock.json` non modifié
 
-### T7 — Template workspace (renommage)
-- [ ] `windsurf/workspace/Template.code-workspace` s'ouvre correctement dans Windsurf
-- [ ] README, GETTING-STARTED, TESTING-GUIDE référencent bien `Template.code-workspace`
+### T7 — Template workspace ⏭ NON TESTÉ
+- [ ] À vérifier lors d'un prochain onboarding sur machine fraîche
 
-### T8 — Performance Frontend env (Bug #15 + VITE_MFE_BASE_URL)
-- [ ] `.env` créé depuis `.env.sample` (Step 7e priorise `.env.sample` du repo)
-- [ ] `VITE_MFE_BASE_URL` présente dans le `.env` généré
-- [ ] `VITE_DEV_TOKEN` rempli manuellement après démarrage Legacy Frontend
+### T8 — Performance Frontend env ⏭ NON TESTÉ
+- [ ] À vérifier lors d'un prochain onboarding sur machine fraîche
 
 
