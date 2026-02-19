@@ -1,0 +1,6 @@
+# Optional extra extensions — not required but can be useful
+# Each line: extension-id | Short description
+tomoki1207.pdf | View PDF files directly in IDE (specs, docs)
+ztt25.azure-devops-boards-vscode | View Azure DevOps boards/work items in IDE sidebar
+ritwickdey.liveserver | Quick local HTTP server for testing static HTML files
+codium.codium | AI-powered test generation (Qodo) — helps reach 100% coverage

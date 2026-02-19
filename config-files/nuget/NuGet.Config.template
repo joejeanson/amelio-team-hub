@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+    <add key="Amelio.MongoRepository" value="https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json" />
+  </packageSources>
+  <packageSourceCredentials>
+    <Amelio.MongoRepository>
+        <add key="Username" value="anything" />
+        <add key="ClearTextPassword" value="<REPLACE_WITH_NUGET_PAT>" />
+      </Amelio.MongoRepository>
+  </packageSourceCredentials>
+  <config>
+    <add key="globalPackagesFolder" value="<HOME_DIR>/.nuget/packages" />
+    <add key="repositoryPath" value="<HOME_DIR>/.nuget/packages" />
+  </config>
+</configuration>

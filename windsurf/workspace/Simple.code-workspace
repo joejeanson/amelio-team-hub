@@ -1,0 +1,168 @@
+{
+	"folders": [
+		{
+			"name": "👥 Team Bundle (START HERE)",
+			"path": "../.."
+		},
+		{
+			"name": "🏛️ — ⚛️ Amelio - React",
+			"path": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - React"
+		},
+		{
+			"name": "🏛️ — 💾 Amelio - Back-End",
+			"path": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - Back-End"
+		},
+		{
+			"name": "📊 — 💅 Amelio Performance FE",
+			"path": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-fe"
+		},
+		{
+			"name": "📊 — ❇️ Amelio UI Library",
+			"path": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-ui-library"
+		},
+		{
+			"name": "📊 — 🧰 Amelio Performance Backend",
+			"path": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-backend"
+		},
+		{
+			"name": "📚 — 📖 Documentations",
+			"path": "<AMELIO_DIR>/REPOs/Documentations"
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"activityBar.background": "#1B4332",
+			"activityBar.foreground": "#F4A261",
+			"activityBar.border": "#F4A261",
+			"titleBar.activeBackground": "#1B4332",
+			"titleBar.activeForeground": "#F4A261",
+			"titleBar.border": "#F4A261",
+			"terminal.background": "#1e1e1e",
+			"terminal.foreground": "#F4A261",
+			"terminalCursor.background": "#F4A261",
+			"terminalCursor.foreground": "#F4A261"
+		},
+		"git.scanRepositories": [
+			"<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - Back-End",
+			"<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - React",
+			"<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-ui-library",
+			"<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-fe",
+			"<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-backend"
+		],
+		"git.autoRepositoryDetection": false,
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"**/node_modules": true
+		},
+		"terminal.integrated.profiles.osx": {
+			"🏛️ — ⚛️ Amelio - React": {
+				"path": "zsh",
+				"args": ["-l"],
+				"overrideName": true,
+				"icon": "react",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - React"
+			},
+			"🏛️ — 💾 Amelio - Back-End": {
+				"path": "zsh",
+				"args": ["-l"],
+				"overrideName": true,
+				"icon": "server",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - Back-End"
+			},
+			"📊 — 💅 Amelio Performance FE": {
+				"path": "zsh",
+				"args": ["-l"],
+				"overrideName": true,
+				"icon": "pulse",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-fe"
+			},
+			"📊 — ❇️ Amelio UI Library": {
+				"path": "zsh",
+				"args": ["-l"],
+				"overrideName": true,
+				"icon": "symbol-color",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-ui-library"
+			},
+			"📊 — 🧰 Amelio Performance Backend": {
+				"path": "zsh",
+				"args": ["-l"],
+				"overrideName": true,
+				"icon": "server-process",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-backend"
+			}
+		},
+		"terminal.integrated.profiles.windows": {
+			"🏛️ — ⚛️ Amelio - React": {
+				"path": "powershell.exe",
+				"overrideName": true,
+				"icon": "react",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - React"
+			},
+			"🏛️ — 💾 Amelio - Back-End": {
+				"path": "powershell.exe",
+				"overrideName": true,
+				"icon": "server",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - Back-End"
+			},
+			"📊 — 💅 Amelio Performance FE": {
+				"path": "powershell.exe",
+				"overrideName": true,
+				"icon": "pulse",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-fe"
+			},
+			"📊 — ❇️ Amelio UI Library": {
+				"path": "powershell.exe",
+				"overrideName": true,
+				"icon": "symbol-color",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-ui-library"
+			},
+			"📊 — 🧰 Amelio Performance Backend": {
+				"path": "powershell.exe",
+				"overrideName": true,
+				"icon": "server-process",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-backend"
+			}
+		},
+		"terminal.integrated.profiles.linux": {
+			"🏛️ — ⚛️ Amelio - React": {
+				"path": "bash",
+				"overrideName": true,
+				"icon": "react",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - React"
+			},
+			"🏛️ — 💾 Amelio - Back-End": {
+				"path": "bash",
+				"overrideName": true,
+				"icon": "server",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/Amelio - Back-End"
+			},
+			"📊 — 💅 Amelio Performance FE": {
+				"path": "bash",
+				"overrideName": true,
+				"icon": "pulse",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-fe"
+			},
+			"📊 — ❇️ Amelio UI Library": {
+				"path": "bash",
+				"overrideName": true,
+				"icon": "symbol-color",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-ui-library"
+			},
+			"📊 — 🧰 Amelio Performance Backend": {
+				"path": "bash",
+				"overrideName": true,
+				"icon": "server-process",
+				"cwd": "<AMELIO_DIR>/REPOs/Amelio_FullStack/amelio-performance-backend"
+			}
+		},
+		"workbench.startupEditor": "none",
+		"workbench.editor.restoreViewState": false,
+		"git.ignoreLimitWarning": true,
+		"typescript.tsdk": "📊 — ❇️ Amelio UI Library/node_modules/typescript/lib"
+	}
+}

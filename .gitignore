@@ -1,0 +1,10 @@
+# Mac system files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Workspace files (personal)
+*.code-workspace
+!Simple.code-workspace

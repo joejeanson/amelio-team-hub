@@ -1,0 +1,4 @@
+bierner.markdown-mermaid
+naumovs.color-highlight
+pkief.material-icon-theme
+sergeyegorov.folder-color
