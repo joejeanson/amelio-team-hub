@@ -142,3 +142,26 @@
   3. Check for existing file before writing — error if file already exists
 - **Workflow fix**: Step 10 now includes filename selection question, naming convention note, and existence check
 
+### 20. Workflows déployés dans les repos au lieu des globales Windsurf
+- **Error**: N/A — erreur d'architecture
+- **Cause**: Le workflow d'onboarding a déployé des fichiers `.windsurf/workflows/` (ex: `create-perfo-fe-pr.md`, `create-perfo-be-pr.md`) **directement dans les repos** (`amelio-ui-library/`, `amelio-performance-backend/`), alors qu'ils devraient être dans les **workflows globaux Windsurf** (`~/.windsurf/workflows/` ou équivalent global)
+- **Problème 1 — Git tracking**: Ces fichiers `.windsurf/workflows/` à l'intérieur des repos sont **suivis par git** et seront donc commités/pushés, ce qui n'est pas souhaitable (configs personnelles/locales)
+- **Problème 2 — Mauvais emplacement**: Les workflows Windsurf globaux (accessibles depuis n'importe quel workspace) n'ont pas besoin d'être dans chaque repo. Les déployer dans les repos crée de la duplication et pollue l'historique git
+- **À investiguer**:
+  - Pourquoi le workflow d'onboarding a-t-il choisi de déployer dans les repos plutôt que dans les globales ?
+  - Quel est le bon chemin pour les workflows globaux Windsurf sur macOS ?
+  - Faut-il ajouter `.windsurf/` au `.gitignore` de chaque repo concerné ?
+  - Ou faut-il déplacer ces workflows vers un emplacement global et les retirer des repos ?
+- **Impact**: Risque de commiter des configs personnelles dans les repos partagés
+
+### 21. Workflow d'onboarding a modifié des fichiers git-trackés sans avertissement (OMAGE 1 & 2)
+- **Error**: N/A — modification non sollicitée de fichiers versionnés
+- **Cause**: Le workflow d'onboarding a modifié des fichiers git-trackés dans `amelio-performance-fe` et `Amelio - React` sans avertir l'utilisateur :
+  - **OMAGE 1** — `.env.local` (`Amelio - React`) : fichier modifié alors qu'il contient des secrets/configs locales sensibles
+  - **OMAGE 2** — `package-lock.json` (`Amelio - React`) : fichier de lock modifié, ce qui peut introduire des diffs non intentionnels dans le repo et casser la reproductibilité des builds
+- **À investiguer**:
+  - Quelle étape du workflow a déclenché ces modifications ?
+  - Le workflow devrait-il vérifier l'état git (`git status`) avant et après chaque étape pour détecter les fichiers modifiés ?
+  - Faut-il ajouter une étape de validation explicite avant toute opération susceptible de modifier des fichiers git-trackés ?
+- **Impact**: Risque de commiter accidentellement des secrets (`.env.local`) ou des diffs de lock non voulus (`package-lock.json`)
+
