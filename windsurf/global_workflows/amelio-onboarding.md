@@ -1110,9 +1110,11 @@ Present a visual preview table:
 | **3** | 🌸 Cherry Blossom | `#4A1942` | `#4A1942` | `#F7A8B8` |
 | **4** | 🌑 Midnight Dark | `#0D0D0D` | `#0D0D0D` | `#BB86FC` |
 | **5** | 🔥 Ember Red | `#3B0A0A` | `#3B0A0A` | `#FF6B6B` |
-| **6** | 🎨 Custom — I'll pick my own color |  |  |  |
+| **6** | 💜 Mauve Dream | `#1A1030` | `#1A1030` | `#7B68EE` |
+| **7** | 🩵 Amelio Brand | `#2E3A59` | `#2E3A59` | `#10CFBD` |
+| **8** | 🎨 Custom — I'll pick my own color |  |  |  |
 
-If **6 (Custom)**: ask the user for a hex color for the background (e.g. `#1A2B3C`) and a hex color for the accent (e.g. `#FFAA00`). Store as `THEME_BG` and `THEME_ACCENT`.
+If **8 (Custom)**: ask the user for a hex color for the background (e.g. `#1A2B3C`) and a hex color for the accent (e.g. `#FFAA00`). Store as `THEME_BG` and `THEME_ACCENT`.
 
 Store the chosen theme colors as `THEME_BG` and `THEME_ACCENT`:
 - Theme 1: `THEME_BG=#1B4332`, `THEME_ACCENT=#F4A261`
@@ -1120,6 +1122,8 @@ Store the chosen theme colors as `THEME_BG` and `THEME_ACCENT`:
 - Theme 3: `THEME_BG=#4A1942`, `THEME_ACCENT=#F7A8B8`
 - Theme 4: `THEME_BG=#0D0D0D`, `THEME_ACCENT=#BB86FC`
 - Theme 5: `THEME_BG=#3B0A0A`, `THEME_ACCENT=#FF6B6B`
+- Theme 6: `THEME_BG=#1A1030`, `THEME_ACCENT=#7B68EE`
+- Theme 7: `THEME_BG=#2E3A59`, `THEME_ACCENT=#10CFBD`
 
 **IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
 ```bash
