@@ -525,20 +525,23 @@ The MongoDB dump (`DB_Freemium/`) contains ~242 compressed BSON files (~286 MB).
 **Step 1 — Download the dump from SharePoint:**
 
 > 🔐 **SharePoint access required** — you must be logged in with your `@amelio.co` Microsoft account.
-> URL: https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=ZRbsE2
+> URL: https://maximeamelio-my.sharepoint.com/:f:/g/personal/jonathan_jeanson_amelio_co/IgCvn1EI2JNaSaoYAr-OWY9oATasfEGdAIgKaJj-oeLm-Ys?e=DGMKIH
 
-Download `DB_Freemium.zip` (or the `DB_Freemium/` folder) from SharePoint and place it in `${AMELIO_DIR}/`.
+1. Open the URL above in your browser
+2. Click **Download** (top toolbar) — SharePoint will package the folder as a zip automatically
+3. Once downloaded, extract it into `${AMELIO_DIR}/`:
 
-If downloaded as a zip, extract it:
 ```bash
-cd "${AMELIO_DIR}" && unzip DB_Freemium.zip -d . && rm DB_Freemium.zip
+cd "${AMELIO_DIR}" && unzip ~/Downloads/DB_Freemium.zip -d . && rm ~/Downloads/DB_Freemium.zip
 ```
 
 On Windows (PowerShell):
 ```powershell
-Expand-Archive -Path "${AMELIO_DIR}\DB_Freemium.zip" -DestinationPath "${AMELIO_DIR}" -Force
-Remove-Item "${AMELIO_DIR}\DB_Freemium.zip"
+Expand-Archive -Path "$env:USERPROFILE\Downloads\DB_Freemium.zip" -DestinationPath "${AMELIO_DIR}" -Force
+Remove-Item "$env:USERPROFILE\Downloads\DB_Freemium.zip"
 ```
+
+> **Note**: The zip filename from SharePoint may differ (e.g. `DB_Freemium-[date].zip`). Adjust the filename in the command above if needed.
 
 Verify the dump is in place:
 ```bash
