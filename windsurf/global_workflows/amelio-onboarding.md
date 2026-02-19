@@ -13,6 +13,7 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **Do NOT skip steps** — if a tool is already installed, confirm version and move on
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
 - **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (`winget`) since Git Bash isn't installed yet.
+- **NEVER modify files directly inside cloned ADO repositories** — any local configuration override must use dedicated override files (e.g. `docker-compose.override.yml`, `appsettings.Local.json`) that are already listed in `.gitignore`. This preserves the ability to commit and pull without conflicts.
 
 ## CONTEXT
 The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
@@ -89,12 +90,41 @@ Store variables:
 - `TEAM_DIR` = auto-detected bundle path
 - `CFG_DIR` = `${TEAM_DIR}/config-files`
 
-### 0d — Collect Azure DevOps PAT
-Ask the user:
-> To clone the 5 Azure DevOps repositories, I need your **Personal Access Token (PAT)**.
-> You can generate one here: https://dev.azure.com/ameliodev/_usersSettings/tokens
+### 0d — Set up Azure DevOps PAT (via .env file)
+
+**Do NOT paste your PAT directly in chat** — use the `.env` file approach instead.
+
+**Step 1 — Create your `.env` file from the template:**
+```bash
+cp "${TEAM_DIR}/.env.simple" "${TEAM_DIR}/.env"
+```
+On Windows (PowerShell):
+```powershell
+Copy-Item "${TEAM_DIR}/.env.simple" "${TEAM_DIR}/.env"
+```
+
+**Step 2 — Open `${TEAM_DIR}/.env` and replace `your-azure-devops-pat-here`** with your real PAT.
+> Generate one at: https://dev.azure.com/ameliodev/_usersSettings/tokens
 > Required scopes: **Code (Read & Write)**, **Packaging (Read)**
-> Paste it below (it will not be stored):
+
+The `.env` file is listed in `.gitignore` — it will **never** be committed to the repo.
+
+**Step 3 — Load the PAT into the session:**
+// turbo
+```bash
+export $(grep -v '^#' "${TEAM_DIR}/.env" | xargs)
+echo "ADO_PAT loaded: ${ADO_PAT:0:4}****"
+```
+On Windows (PowerShell):
+```powershell
+Get-Content "${TEAM_DIR}/.env" | Where-Object { $_ -notmatch '^\s*#' -and $_ -match '=' } | ForEach-Object {
+  $parts = $_ -split '=', 2
+  [System.Environment]::SetEnvironmentVariable($parts[0].Trim(), $parts[1].Trim(), 'Process')
+}
+Write-Host "ADO_PAT loaded: $($env:ADO_PAT.Substring(0,4))****"
+```
+
+Confirm the PAT is loaded (shows first 4 chars only). Store as `ADO_PAT` for use in Step 3 and Step 12.
 
 ### 0e — Confirm before proceeding
 Present a summary and ask for confirmation:
@@ -192,8 +222,25 @@ winget install --id Docker.DockerDesktop -e
 **After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
 
 ### 1d — Docker Desktop
-After install, tell user: **Open Docker Desktop and wait for it to fully start** before continuing.
-Wait for confirmation, then verify:
+Ask the user with a multiple-choice question:
+- **A**: Docker Desktop is already running — I see the icon in the menu bar
+- **B**: Install Docker Desktop for me automatically (macOS or Windows)
+- **C**: Docker is available via CLI only (no Desktop GUI) — skip and verify
+
+**If B (auto-install on macOS)**:
+```bash
+brew install --cask docker
+open /Applications/Docker.app
+```
+Then tell the user: **Docker Desktop is launching — wait for the whale icon to appear in the menu bar before continuing.**
+
+**If B (auto-install on Windows)**:
+```powershell
+winget install --id Docker.DockerDesktop -e
+```
+Then tell the user: **Docker Desktop has been installed. Please launch it from the Start menu and wait for it to fully start.**
+
+Once the user confirms Docker is running (options A or B), verify:
 // turbo
 ```bash
 docker info --format '{{.ServerVersion}}' 2>&1
@@ -394,18 +441,45 @@ On Windows (PowerShell):
 docker start amelio_mongodb 2>$null; if (-not $?) { Write-Host "Container not found, creating..." }
 ```
 
-### 5b — Start Performance Backend containers (PostgreSQL, Redis, Mailpit)
+### 5b — Create docker-compose.override.yml for Performance Backend
+
+> **IMPORTANT**: The `docker-compose.yml` in `amelio-performance-backend` uses `postgres:18` which has a known volume path incompatibility on fresh installs. **Do NOT modify `docker-compose.yml` directly** — it is tracked by git. Instead, create a `docker-compose.override.yml` (already listed in `.gitignore`) to pin postgres to version 17 locally.
+
+```bash
+cat > "${FS_DIR}/amelio-performance-backend/docker-compose.override.yml" << 'EOF'
+services:
+  dev_db:
+    image: postgres:17
+    volumes:
+      - dev_db_data:/var/lib/postgresql/data
+EOF
+echo "docker-compose.override.yml created"
+```
+
+On Windows (PowerShell):
+```powershell
+@"
+services:
+  dev_db:
+    image: postgres:17
+    volumes:
+      - dev_db_data:/var/lib/postgresql/data
+"@ | Set-Content "${FS_DIR}/amelio-performance-backend/docker-compose.override.yml"
+Write-Host "docker-compose.override.yml created"
+```
+
+### 5c — Start Performance Backend containers (PostgreSQL, Redis, Mailpit)
 ```bash
 cd "${FS_DIR}/amelio-performance-backend" && npm run start-docker
 ```
 
 This starts:
-- **dev_db** (PostgreSQL) on port 5432
+- **dev_db** (PostgreSQL 17) on port 5432
 - **test_db** (PostgreSQL) on port 5433
 - **dev_cache** (Redis) on port 6379
 - **mailpit** on ports 8025 (UI) and 1025 (SMTP)
 
-### 5c — Verify all containers
+### 5d — Verify all containers
 // turbo
 ```bash
 echo "=== Docker containers ===" && docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
