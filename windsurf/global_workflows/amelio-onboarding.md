@@ -406,34 +406,13 @@ New-Item -ItemType Directory -Force -Path "${HOME_DIR}/.codeium/windsurf/global_
 Copy-Item "${TEAM_DIR}/windsurf/global_workflows/*.md" "${HOME_DIR}/.codeium/windsurf/global_workflows/"
 ```
 
-### 4e — Deploy PR workflows to repos
-```bash
-for repo in amelio-performance-fe amelio-ui-library; do
-  mkdir -p "${FS_DIR}/${repo}/.windsurf/workflows"
-  cp "${TEAM_DIR}/windsurf/global_workflows/create-perfo-fe-pr.md" "${FS_DIR}/${repo}/.windsurf/workflows/"
-done
-mkdir -p "${FS_DIR}/amelio-performance-backend/.windsurf/workflows"
-cp "${TEAM_DIR}/windsurf/global_workflows/create-perfo-be-pr.md" "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
-```
-
-On Windows (PowerShell):
-```powershell
-foreach ($repo in @("amelio-performance-fe", "amelio-ui-library")) {
-  New-Item -ItemType Directory -Force -Path "${FS_DIR}/$repo/.windsurf/workflows"
-  Copy-Item "${TEAM_DIR}/windsurf/global_workflows/create-perfo-fe-pr.md" "${FS_DIR}/$repo/.windsurf/workflows/"
-}
-New-Item -ItemType Directory -Force -Path "${FS_DIR}/amelio-performance-backend/.windsurf/workflows"
-Copy-Item "${TEAM_DIR}/windsurf/global_workflows/create-perfo-be-pr.md" "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
-```
-
-### 4f — Verify deployment
+### 4e — Verify deployment
 // turbo
 ```bash
 echo "=== Rules ===" && ls "${HOME_DIR}/.codeium/.windsurf/rules/"
 echo "=== Global Rules ===" && ls "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 echo "=== Skills ===" && ls "${HOME_DIR}/.codeium/windsurf/skills/"
 echo "=== Global Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflows/"
-echo "=== Repo Workflows ===" && ls "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" && ls "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
 ```
 
 On Windows (PowerShell):
@@ -442,7 +421,6 @@ Write-Host "=== Rules ==="; Get-ChildItem "${HOME_DIR}/.codeium/.windsurf/rules/
 Write-Host "=== Global Rules ==="; Test-Path "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 Write-Host "=== Skills ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/skills/" -Name
 Write-Host "=== Global Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name
-Write-Host "=== Repo Workflows ==="; Get-ChildItem "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/" -Name
 ```
 
 ---
@@ -522,13 +500,26 @@ Expected: 5 containers running (amelio_mongodb, dev_db, test_db, dev_cache, mail
 ## Step 6 — Database Setup
 
 ### 6a — Import MongoDB Freemium database
-Ask the user:
-> The Legacy Backend needs the Freemium MongoDB database.
-> Do you have the `DB_Freemium/Freemium/` dump folder?
-- **A**: Yes, I have it (I will provide the path)
-- **B**: No, I will get it later — skip for now
 
-If A:
+The MongoDB dump is distributed as a folder (`DB_Freemium/Freemium/`) containing ~242 compressed BSON files (~286 MB). It is **not included in the git repo** due to its size.
+
+Ask the user:
+> The Legacy Backend needs the Freemium MongoDB database dump.
+> Your team lead should provide you with the `DB_Freemium/` folder (contains `Freemium/` with ~242 .bson.gz files, ~286 MB).
+>
+> **Copy the folder to**: `${AMELIO_DIR}/DB_Freemium/`
+> (This path is already in `.gitignore` — it won't be committed.)
+>
+> Do you have the dump ready?
+- **A**: Yes, I copied `DB_Freemium/` to the right location
+- **B**: Yes, but it's in a different location (I will provide the path)
+- **C**: No, I will get it later — skip for now
+
+If A, use default path: `${AMELIO_DIR}/DB_Freemium/Freemium/`
+If B, ask for the path.
+If C, skip and note that Legacy Backend will have no data on first run.
+
+If A or B:
 ```bash
 mongorestore --host localhost:27017 \
   --username ameliodb --password ameliodb \
@@ -594,8 +585,10 @@ git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.API.V2/ap
 git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.Scheduler.V2/appsettings.json
 ```
 
-### 7c — NuGet setup (macOS ONLY)
-On macOS, the `NuGet.config` uses `$(UserProfile)` which is a Windows variable. Must override locally.
+### 7c — NuGet setup
+
+#### Part 1 — Fix repo-level NuGet.config (macOS ONLY)
+On macOS, the repo `NuGet.config` uses `$(UserProfile)` which is a Windows-only variable. Must override locally.
 
 **Step 1**: Modify `NuGet.config` in the Legacy Backend repo:
 ```bash
@@ -616,15 +609,26 @@ Edit the `<config>` section in `NuGet.config` to:
 git update-index --skip-worktree NuGet.config
 ```
 
-**Step 3**: Create user-level NuGet config:
+> On **Windows**, skip Part 1 entirely — `$(UserProfile)` resolves natively.
+
+#### Part 2 — Create user-level NuGet config (BOTH macOS and Windows)
+This provides the ADO PAT credentials for the private `Amelio.MongoRepository` NuGet feed.
+
 ```bash
 mkdir -p "${HOME_DIR}/.nuget/NuGet"
 ```
+On Windows (PowerShell):
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.nuget\NuGet"
+```
+
 Read the template from `${CFG_DIR}/nuget/NuGet.Config.template`, replace:
-- `<HOME_DIR>` with the actual home directory path
+- `<HOME_DIR>` with the actual home directory path (macOS: `/Users/username`, Windows: `C:\Users\username`)
 - `<REPLACE_WITH_NUGET_PAT>` with the ADO PAT from Step 0d
 
 Save to: `${HOME_DIR}/.nuget/NuGet/NuGet.Config`
+
+> **CRITICAL**: Without this config, `dotnet restore` for Legacy Backend will fail with `401 Unauthorized` on the Amelio.MongoRepository feed. Ensure the PAT has **Packaging (Read)** scope.
 
 ### 7d — Legacy Frontend config
 ```bash
@@ -641,6 +645,7 @@ Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.
 Protect from git (cross-platform):
 ```bash
 git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
+git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.local
 ```
 
 ### 7e — Performance Frontend config
@@ -731,9 +736,9 @@ cd "${FS_DIR}/amelio-performance-backend" && dotnet restore
 
 ### 8e — Legacy Frontend (uses npm, NOT yarn)
 ```bash
-cd "${FS_DIR}/Amelio - React" && npm install --legacy-peer-deps
+cd "${FS_DIR}/Amelio - React" && npm ci --legacy-peer-deps
 ```
-**IMPORTANT**: This project uses `npm` with `--legacy-peer-deps` due to React 18 peer dependency conflicts. Do NOT use `yarn`.
+**IMPORTANT**: This project uses `npm ci` (not `npm install`) with `--legacy-peer-deps` due to React 18 peer dependency conflicts. `npm ci` installs from the existing `package-lock.json` **without modifying it** — this prevents accidental diffs on a git-tracked file. Do NOT use `yarn`.
 
 ### 8f — Legacy Backend
 ```bash
@@ -872,14 +877,14 @@ Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Simple.code-wor
 
 ### If `INSTALL_MODE` = `team-hub-parent`
 Modifications to apply:
-1. **Keep** the first folder entry `"👥 — 🏠 Amelio Team Hub"` but change its `path` from `"../.."` to `"."` (the team-hub IS the root)
+1. **Keep** the first folder entry `"👥 — 🏠 Amelio Team Hub"` and keep its `path` as `".."` — the workspace file is saved in `${AMELIO_DIR}/WorkSpace/`, so `".."` correctly resolves one level up to the team-hub root
 2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` (= `${TEAM_DIR}`) path:
    - macOS: e.g. `/Users/${USERNAME}/amelio-team-hub` (wherever the repo was cloned)
    - Windows: use forward slashes for VS Code
 
 ### If `INSTALL_MODE` = `separate`
 Modifications to apply:
-1. **Remove** the first folder entry `"👥 — 🏠 Amelio Team Hub"` (path `"../.."`), as it is only needed for the initial onboarding
+1. **Remove** the first folder entry `"👥 — 🏠 Amelio Team Hub"` (path `".."`), as it is only relevant when the team-hub is the parent directory
 2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` path chosen in Step 0:
    - macOS: `/Users/${USERNAME}/Amelio_primary` (or custom path)
    - Windows: `C:/Users/${USERNAME}/Amelio_primary` (use forward slashes for VS Code)
@@ -994,7 +999,7 @@ echo "=== 5. PostgreSQL ===" && docker exec dev_db psql -U dev_user -d dev_db -c
 echo "=== 6. Rules ===" && ls "${HOME_DIR}/.codeium/.windsurf/rules/"
 echo "=== 7. Global Rules ===" && ls "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 echo "=== 8. Skills ===" && ls "${HOME_DIR}/.codeium/windsurf/skills/"
-echo "=== 9. Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflows/" && ls "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" && ls "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/"
+echo "=== 9. Workflows ===" && ls "${HOME_DIR}/.codeium/windsurf/global_workflows/"
 echo "=== 10. Workspace ===" && ls "${AMELIO_DIR}/WorkSpace/" 2>&1
 echo "=== 11. UI Library dist ===" && ls "${FS_DIR}/amelio-ui-library/dist/index.css" 2>&1
 echo "=== 12. Config files ===" && ls "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json" "${FS_DIR}/amelio-performance-fe/.env" "${FS_DIR}/Amelio - React/.env.development" 2>&1
@@ -1010,7 +1015,7 @@ Write-Host "=== 5. PostgreSQL ==="; docker exec dev_db psql -U dev_user -d dev_d
 Write-Host "=== 6. Rules ==="; Get-ChildItem "${HOME_DIR}/.codeium/.windsurf/rules/" -Name
 Write-Host "=== 7. Global Rules ==="; Test-Path "${HOME_DIR}/.codeium/windsurf/memories/global_rules.md"
 Write-Host "=== 8. Skills ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/skills/" -Name
-Write-Host "=== 9. Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-fe/.windsurf/workflows/" -Name; Get-ChildItem "${FS_DIR}/amelio-performance-backend/.windsurf/workflows/" -Name
+Write-Host "=== 9. Workflows ==="; Get-ChildItem "${HOME_DIR}/.codeium/windsurf/global_workflows/" -Name
 Write-Host "=== 10. Workspace ==="; Get-ChildItem "${AMELIO_DIR}/WorkSpace/" -Name
 Write-Host "=== 11. UI Library dist ==="; Test-Path "${FS_DIR}/amelio-ui-library/dist/index.css"
 Write-Host "=== 12. Config files ==="; Test-Path "${FS_DIR}/amelio-performance-backend/PerformanceManagement.WebApi/appsettings.Development.json"; Test-Path "${FS_DIR}/amelio-performance-fe/.env"; Test-Path "${FS_DIR}/Amelio - React/.env.development"
@@ -1028,7 +1033,7 @@ Present summary table:
 | 6 | Windsurf rules deployed | ? |
 | 7 | Global rules (global_rules.md) | ? |
 | 8 | Shared skills deployed | ? |
-| 9 | Workflows deployed (global + repo-specific) | ? |
+| 9 | Workflows deployed (global Windsurf location) | ? |
 | 10 | Personalized workspace file | ? |
 | 11 | UI Library built (dist/) | ? |
 | 12 | Config files deployed (appsettings, .env) | ? |
