@@ -878,11 +878,33 @@ Modifications to apply:
    - macOS: `/Users/${USERNAME}/Amelio_primary` (or custom path)
    - Windows: `C:/Users/${USERNAME}/Amelio_primary` (use forward slashes for VS Code)
 
-Save as `${AMELIO_DIR}/REPOs/WorkSpace/Simple_${USERNAME}.code-workspace`.
+**Ask the user to choose a filename** for their personalized workspace. Suggest:
+- **A**: `Amelio_${USERNAME}.code-workspace` (uses OS username, e.g. `Amelio_devtest.code-workspace`)
+- **B**: `Amelio_[FirstName][LastName].code-workspace` (e.g. `Amelio_JonathanJeanson.code-workspace`) — recommended for team clarity
+- **C**: `[FirstName][LastName].code-workspace` (e.g. `JonathanJeanson.code-workspace`)
+- **D**: I want a different name (I will specify)
+
+> **Note**: The template file is named `Simple.code-workspace` for historical reasons — do NOT use `Simple_` as a prefix for personal workspace files. Use `Amelio_` or just the employee name.
+
+**IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
+```bash
+WORKSPACE_FILE="${AMELIO_DIR}/REPOs/WorkSpace/${CHOSEN_NAME}.code-workspace"
+if [ -f "$WORKSPACE_FILE" ]; then
+  echo "ERROR: File already exists: $WORKSPACE_FILE"
+  echo "Choose a different name to avoid overwriting."
+else
+  # generate and save
+fi
+```
+
+If the file already exists, ask the user to choose a different name before proceeding.
+
+Save as `${AMELIO_DIR}/REPOs/WorkSpace/${CHOSEN_NAME}.code-workspace`.
 
 Tell user:
 > Your personalized workspace is ready! To open it:
-> **File > Open Workspace from File** and select `Simple_${USERNAME}.code-workspace`.
+> **File > Open Workspace from File** and select `${CHOSEN_NAME}.code-workspace`.
+> ⚠️ This file is personal — do NOT commit it to git. Add it to `.gitignore` if needed.
 
 ---
 

@@ -61,11 +61,31 @@
 - **Fix**: Always run Step 7 (config deployment) before Step 6b (migrations)
 - **Workflow note**: Step ordering is correct — do not run migrations before configs
 
+### 10. `brew install --cask docker` fails when Docker Desktop already installed
+- **Error**: `Error: It seems there is already an App at '/Applications/Docker.app'`
+- **Cause**: Docker Desktop was already installed; brew tried to reinstall it
+- **Fix**: Detected existing install, ran `open /Applications/Docker.app` directly instead
+- **Workflow fix**: Step 1d now asks user to choose between already running / auto-install / CLI-only
+
+### 11. `windsurf` command not found in PATH
+- **Error**: `zsh: command not found: windsurf` when running `windsurf --install-extension`
+- **Cause**: Windsurf IDE does not automatically add its CLI binary to the shell PATH on macOS
+- **Binary location**: `/Applications/Windsurf.app/Contents/Resources/app/bin/windsurf`
+- **Fix**: Used full path: `WINDSURF=$(which windsurf 2>/dev/null || echo "/Applications/Windsurf.app/Contents/Resources/app/bin/windsurf")`
+- **Workflow fix**: Added PATH resolution note and updated all install loops in Step 9
+
+### 12. PAT pasted directly in chat instead of using .env file
+- **Error**: N/A — security concern
+- **Cause**: The workflow Step 0d instructs to use a `.env` file, but the user pasted the PAT directly in chat
+- **Impact**: PAT is visible in chat history — should be rotated after onboarding
+- **Resolution**: After onboarding, rotate the PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens
+- **Workflow note**: Step 0d already warns against this — ensure future users follow the `.env` approach
+
 ---
 
 ## ❌ UNRESOLVED
 
-### 10. Legacy Backend dotnet restore — 401 Unauthorized on NuGet feed
+### 13. Legacy Backend dotnet restore — 401 Unauthorized on NuGet feed
 - **Error**: `NU1301: Response status code does not indicate success: 401 (Unauthorized)`
 - **Feed**: `https://pkgs.dev.azure.com/ameliodev/_packaging/Amelio.MongoRepository/nuget/v3/index.json`
 - **Cause**: The ADO PAT used during this session does not have **Packaging (Read)** scope for the NuGet feed
@@ -73,7 +93,7 @@
 - **Full error log**: See `nuget-restore-error.log` at the root of this repo
 - **Resolution**: Generate a new PAT at https://dev.azure.com/ameliodev/_usersSettings/tokens with scopes **Code (Read & Write)** + **Packaging (Read)**, then update `~/.nuget/NuGet/NuGet.Config`
 
-### 11. MongoDB Freemium database not imported
+### 14. MongoDB Freemium database not imported
 - **Status**: Skipped — dump not available on this machine
 - **Impact**: Legacy Backend will not have data on first run
 - **Resolution**: Obtain the `DB_Freemium/Freemium/` dump folder and run:
@@ -86,8 +106,19 @@
   ```
 - **Note**: The dump should be made available in `amelio-team-hub` or shared via a secure channel
 
-### 12. VITE_DEV_TOKEN not set in amelio-performance-fe/.env
+### 15. VITE_DEV_TOKEN not set in amelio-performance-fe/.env
 - **Status**: Placeholder only — requires a live JWT token
 - **Impact**: Performance Frontend dev mode will not authenticate against Legacy Backend
 - **Resolution**: Start Legacy Frontend (http://localhost:3011), log in, open DevTools > Network, copy the Bearer token from any API request header, paste into `.env` as `VITE_DEV_TOKEN`
+
+### 16. Workspace file created without asking user for filename / without checking for existing file
+- **Error**: N/A — process error
+- **Cause**: Step 10 generated `Simple_devtest.code-workspace` using the OS username without asking the user for their preferred name, and without checking if a file already existed at that path
+- **Bad naming**: The prefix `Simple_` comes from the template filename and is not appropriate for personal workspace files
+- **Impact**: Could silently overwrite a previously customized workspace file
+- **Fix applied**: File renamed to `Amelio_devtest.code-workspace`. Workflow Step 10 updated to:
+  1. Always ask the user to choose a filename with meaningful options (`Amelio_username`, `Amelio_FirstLastName`, etc.)
+  2. Never use `Simple_` as a prefix for personal workspace files
+  3. Check for existing file before writing — error if file already exists
+- **Workflow fix**: Step 10 now includes filename selection question, naming convention note, and existence check
 
