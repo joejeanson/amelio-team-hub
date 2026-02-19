@@ -641,35 +641,15 @@ Expected: file contains `<packageSourceCredentials>` with your PAT and `<config>
 
 ### 7d — Legacy Frontend config
 
-Copy `.env.development` unconditionally (safe — not git-tracked):
-```bash
-cp "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
-```
+`.env.development` and `.env.local` are **git-tracked in the `Amelio - React` repo** — they are already present after `git clone`. No copy needed.
 
-Copy `.env.local` **only if it does not already exist** — never overwrite existing local secrets:
-```bash
-if [ ! -f "${FS_DIR}/Amelio - React/.env.local" ]; then
-  cp "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
-else
-  echo "  .env.local already exists — skipping to preserve existing config"
-fi
-```
-
-On Windows (PowerShell):
-```powershell
-Copy-Item "${CFG_DIR}/legacy-fe/.env.development.template" "${FS_DIR}/Amelio - React/.env.development"
-if (-not (Test-Path "${FS_DIR}/Amelio - React/.env.local")) {
-  Copy-Item "${CFG_DIR}/legacy-fe/.env.local.template" "${FS_DIR}/Amelio - React/.env.local"
-} else {
-  Write-Host "  .env.local already exists — skipping to preserve existing config"
-}
-```
-
-Protect both files from git (prevents accidental commits of local secrets):
+The only action required is to protect local modifications from being accidentally committed:
 ```bash
 git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
 git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.local
 ```
+
+> **Why skip-worktree?** These files contain environment-specific values (API URLs, OIDC authority, etc.) that developers may need to change locally (e.g. point to `localhost:18489` instead of the staging URL). `skip-worktree` prevents those local changes from appearing as git diffs and being accidentally committed.
 
 ### 7e — Performance Frontend config
 If `.env.sample` exists in the repo, copy it:
