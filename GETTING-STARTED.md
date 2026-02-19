@@ -28,9 +28,14 @@ amelio-team-hub/windsurf/workspace/Template.code-workspace
 
 ## 3. Start the Onboarding
 
-1. In the Windsurf sidebar, locate the **Team Hub** folder
-2. Drag the file `windsurf/global_workflows/amelio-onboarding.md` into the **Cascade chat panel**
+1. Open **Cascade** in Windsurf (chat panel on the right)
+2. Type the slash command:
+   ```
+   /amelio-onboarding
+   ```
 3. Cascade reads the workflow and walks you through **13 interactive steps** (~30–45 min)
+
+> **Note**: The workflow file is located at `windsurf/global_workflows/amelio-onboarding.md` inside the Team Hub repo. It is automatically discovered by Windsurf once the workspace is open.
 
 During the onboarding, you will be asked to choose an **installation mode**:
 
@@ -47,7 +52,7 @@ The onboarding handles everything automatically:
 
 ## 4. After Onboarding
 
-Once complete, the workflow is deployed to your system. You can re-invoke it anytime with:
+Once complete, the workflow is deployed to your global Windsurf config. You can re-invoke it anytime from any workspace with:
 
 ```
 /amelio-onboarding
