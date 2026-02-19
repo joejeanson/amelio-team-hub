@@ -581,38 +581,33 @@ Modify **3 files** to use local Docker MongoDB:
 **File 3** (optional): `${FS_DIR}/Amelio - Back-End/OPIA.Scheduler.V2/appsettings.json`
 - Same MongoDB connection string update
 
-After modifying, protect local changes from git (same command on both OS — `git` is cross-platform):
-```bash
-git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree IdentityServer/appsettings.json
-git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.API.V2/appsettings.Development.json
-git -C "${FS_DIR}/Amelio - Back-End" update-index --skip-worktree OPIA.Scheduler.V2/appsettings.json
-```
+> **Note**: These files are git-tracked. Your local changes will show in `git status`. **Do NOT commit them** — they contain machine-specific connection strings. Use `git stash` or `git checkout <file>` if you need to revert.
 
 ### 7c — NuGet setup
 
-#### Part 1 — Fix repo-level NuGet.config (macOS ONLY)
-On macOS, the repo `NuGet.config` uses `$(UserProfile)` which is a Windows-only variable. Must override locally.
+#### Part 1 — Set NUGET_PACKAGES environment variable (macOS ONLY)
+On macOS, the repo `NuGet.config` hardcodes `$(UserProfile)\.nuget\packages` (Windows-only variable) as `globalPackagesFolder`. This resolves to an invalid path on macOS, causing NuGet to use a wrong cache directory.
 
-**Step 1**: Modify `NuGet.config` in the Legacy Backend repo:
+**Do NOT modify the repo's `NuGet.config`** — it is git-tracked.
+
+The fix is to set the `NUGET_PACKAGES` environment variable, which takes **highest priority** over any `NuGet.config` setting:
+
 ```bash
-cd "${FS_DIR}/Amelio - Back-End"
+echo 'export NUGET_PACKAGES="${HOME}/.nuget/packages"' >> ~/.zprofile
+export NUGET_PACKAGES="${HOME_DIR}/.nuget/packages"
+echo "NUGET_PACKAGES set to: ${NUGET_PACKAGES}"
 ```
-Edit the `<config>` section in `NuGet.config` to:
-```xml
-<config>
-  <add key="globalPackagesFolder" value="${HOME_DIR}/.nuget/packages" />
-  <add key="repositoryPath" value="${HOME_DIR}/.nuget/packages" />
-  <add key="maxHttpRequestsPerSource" value="16" />
-</config>
-```
-(Replace `${HOME_DIR}` with the actual absolute path, e.g. `/Users/testdev`)
 
-**Step 2**: Protect from git:
+Verify NuGet resolves the correct cache path:
 ```bash
-git update-index --skip-worktree NuGet.config
+cd "${FS_DIR}/Amelio - Back-End" && dotnet nuget locals global-packages --list
 ```
+Expected: `global-packages: /Users/<username>/.nuget/packages`
 
-> On **Windows**, skip Part 1 entirely — `$(UserProfile)` resolves natively.
+On Windows (PowerShell):
+```powershell
+# Skip Part 1 entirely — $(UserProfile) resolves natively on Windows.
+```
 
 #### Part 2 — Create user-level NuGet config (BOTH macOS and Windows)
 This provides the ADO PAT credentials for the private `Amelio.MongoRepository` NuGet feed.
@@ -643,13 +638,7 @@ Expected: file contains `<packageSourceCredentials>` with your PAT and `<config>
 
 `.env.development` and `.env.local` are **git-tracked in the `Amelio - React` repo** — they are already present after `git clone`. No copy needed.
 
-The only action required is to protect local modifications from being accidentally committed:
-```bash
-git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.development
-git -C "${FS_DIR}/Amelio - React" update-index --skip-worktree .env.local
-```
-
-> **Why skip-worktree?** These files contain environment-specific values (API URLs, OIDC authority, etc.) that developers may need to change locally (e.g. point to `localhost:18489` instead of the staging URL). `skip-worktree` prevents those local changes from appearing as git diffs and being accidentally committed.
+> **Note**: `.env.development` and `.env.local` are git-tracked. If you modify them locally (e.g. change API URLs), those changes will show in `git status`. **Do NOT commit them.** Use `git checkout .env.development .env.local` to revert if needed.
 
 ### 7e — Performance Frontend config
 If `.env.sample` exists in the repo, copy it:

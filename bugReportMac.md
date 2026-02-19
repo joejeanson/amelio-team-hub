@@ -89,10 +89,11 @@
 - **Impact**: `dotnet restore` fails for: `OPIA.API.V2`, `OPIA.Business.V2`, `OPIA.Repository.V2`, `OPIA.Scheduler.V2`, `OPIA.Web.V2`, `OPIA.Uitlity.V2`, `DatabaseMigrator.V2`, `Tests/OPIA.API.V2.Tests`
 - **Full error logs**: `nuget-restore-error.log` (initial) and `nuget-restore-error-after-open-new-workspace.log` (workspace reload)
 - **Fix applied**:
-  1. Added `<packageSourceMapping>` + `maxHttpRequestsPerSource` to `~/.nuget/NuGet/NuGet.Config` on this machine
-  2. Updated `config-files/nuget/NuGet.Config.template` with the same additions
-  3. Updated Step 7c in `amelio-onboarding.md` with explicit instructions and verification step
-- **Workflow fix**: Step 7c now includes `packageSourceMapping` in template and a `cat` verification command
+  1. Nouveau PAT avec scope **Packaging (Read)** configuré dans `~/.nuget/NuGet/NuGet.Config`
+  2. Variable d'environnement `NUGET_PACKAGES` ajoutée dans `~/.zprofile` : `export NUGET_PACKAGES="${HOME}/.nuget/packages"` — prend priorité maximale sur tout `NuGet.config`, y compris le repo-level qui hardcode `$(UserProfile)` (Windows-only)
+  3. `config-files/nuget/NuGet.Config.template` mis à jour avec `packageSourceMapping` + `maxHttpRequestsPerSource`
+  4. Step 7c Part 1 réécrit dans `amelio-onboarding.md` : utilise `NUGET_PACKAGES` env var, **ne modifie plus le repo**
+- **Workflow fix**: Step 7c Part 1 = `NUGET_PACKAGES` dans `~/.zprofile` + vérification `dotnet nuget locals global-packages --list`
 
 ### 20. Workflows déployés dans les repos au lieu des globales Windsurf
 - **Error**: N/A — erreur d'architecture
@@ -133,15 +134,13 @@
 
 ## ✅ RESOLVED (suite)
 
-### 21a. Workflow d'onboarding écrase `.env.local` sans protection git (OMAGE 1)
+### 21a. Workflow d'onboarding écrasait `.env.local` (OMAGE 1)
 - **Error**: N/A — modification non sollicitée d'un fichier git-tracké
-- **Root cause (initial)**: Step 7d copiait `.env.local.template` vers `.env.local` sans vérifier si le fichier existait déjà
-- **Root cause (réel, découvert après double validation)**: `.env.development` et `.env.local` sont **git-trackés dans le repo `Amelio - React`** — ils sont déjà présents après `git clone`. Aucune copie de template n'est nécessaire.
+- **Root cause**: Step 7d copiait `.env.local.template` vers `.env.local` alors que ces fichiers sont **déjà présents après `git clone`** (git-trackés dans `Amelio - React`). Aucune copie n'est nécessaire.
 - **Fix applied**:
   1. Step 7d entièrement réécrit — ne copie plus aucun template pour Legacy Frontend
-  2. Step 7d applique uniquement `git update-index --skip-worktree` sur `.env.development` et `.env.local` pour protéger les modifications locales
-  3. Dossier `config-files/legacy-fe/` supprimé (templates `.env.development.template` et `.env.local.template` inutiles)
-- **Workflow fix**: Step 7d corrigé dans `amelio-onboarding.md` (commit `c8b9030`)
+  2. Step 7d contient uniquement une note `Do NOT commit` pour avertir le développeur
+- **Workflow fix**: Step 7d corrigé dans `amelio-onboarding.md`
 
 ### 14. MongoDB Freemium database not imported
 - **Status**: Skipped during test — dump not available on the test machine
@@ -217,5 +216,38 @@
 
 ### T8 — Performance Frontend env ⏭ NON TESTÉ
 - [ ] À vérifier lors d'un prochain onboarding sur machine fraîche
+
+---
+
+## 🔍 AUDIT WORKFLOW — Session 2026-02-19
+
+> Audit complet de `amelio-onboarding.md` après corrections. Chaque step vérifié contre la machine `devtest`.
+
+| Step | Statut | Notes |
+|---|---|---|
+| 0a–0e | ✅ | `.env.template` existe, PAT masqué, résumé correct |
+| 1a–1e | ✅ | Détection outils + install Homebrew/brew/dotnet-ef corrects |
+| 2 | ✅ | `mkdir` au bon niveau (`AMELIO_DIR`, pas dans `REPOs/`) |
+| 3 | ✅ | Clone 5 repos ADO avec PAT dans URL |
+| 4a–4e | ✅ | Déploiement rules/memories/skills/workflows vers `~/.codeium/windsurf/` uniquement — note `🚫 NEVER` dans 4d |
+| 5a–5d | ✅ | MongoDB + docker-compose.override.yml (postgres:17) + vérification containers |
+| 6a–6b | ✅ | Instructions DB_Freemium claires (options A/B/C) + migrations PostgreSQL |
+| 7a | ✅ | `appsettings.Development.json` + `appsettings.Testing.json` copiés depuis `config-files/` (gitignored) |
+| 7b | ✅ | Modification directe des 3 fichiers git-trackés + note `Do NOT commit` |
+| 7c | ✅ | `NUGET_PACKAGES` env var dans `~/.zprofile` (Part 1, macOS) + NuGet.Config user-level avec PAT Packaging (Read) (Part 2) — aucune modification du repo |
+| 7d | ✅ | Aucune copie — fichiers déjà présents après clone + note `Do NOT commit` |
+| 7e | ✅ | `.env` depuis `.env.sample` (priorité) ou template |
+| 8a | ✅ | `~/.npmrc` user-level uniquement, B64 correct (`anything:PAT`) |
+| 8b–8d | ✅ | yarn UI Library + build + yarn Perf FE + dotnet restore Perf BE |
+| 8e | ✅ | `npm ci --legacy-peer-deps` + vérification `git diff --name-only` + restauration si package-lock.json modifié |
+| 8f | ✅ | `dotnet restore` + known issues 401 et NU1202 documentés avec workarounds |
+| 9 | ✅ | Extensions par tiers A/B/C/D/E, `windsurf` binary résolu avant usage |
+| 10 | ✅ | Workspace généré avec `path: ".."` pour team-hub, nom demandé à l'utilisateur, check existence avant écriture |
+| 11 | ✅ | Bookmarks + URLs locales |
+| 12 | ✅ | Workspace secondaire optionnel |
+| 13 | ✅ | Checklist finale 12 points, task NEVER done until user confirms |
+
+**Correction appliquée lors de l'audit** :
+- Tous les `skip-worktree` retirés du workflow (Steps 7b, 7c, 7d) — remplacés par des notes `Do NOT commit`. Les `skip-worktree` appliqués sur la machine lors des sessions précédentes ont également été revertés (`--no-skip-worktree`).
 
 
