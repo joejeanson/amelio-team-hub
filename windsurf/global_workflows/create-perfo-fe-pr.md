@@ -77,7 +77,7 @@ If the tool is not found:
 1. Explain briefly in the chat what it does:
    > "The test-snapshot tool runs your tests and compares coverage against a baseline. It must live outside your repos. I'll help you set it up."
 2. Propose locations using `ask_user_question`:
-   - **Next to repos**: A `test-snapshots` folder alongside the repo directories (e.g., sibling of `amelio-performance-fe` inside `REPOs/`)
+   - **Next to repos**: A `test-snapshots` folder alongside the repo directories (e.g., sibling of `Amelio_FullStack`)
    - **Windsurf config**: `~/.codeium/windsurf/test-snapshots/`
    - *(User can also type a custom path)*
 3. After the user chooses, create the directory and generate both scripts inside it **using the exact contents from Appendix A and Appendix B** at the bottom of this workflow. Make the shell script executable (`chmod +x`).
@@ -160,6 +160,40 @@ git add <relevant-files>
 git commit --no-verify -m "<type>(#<task>): <description>" -m "- detail 1" -m "- detail 2"
 ```
 - Verify: `git show --stat HEAD` must show ONLY the intended files
+
+### 4.5. Sync with remote main — MANDATORY (never skip)
+
+**This step is CRITICAL. A branch that is not up-to-date with main can pass tests locally but fail on CI.**
+
+Why: Azure DevOps CI performs an automatic rebase/merge onto the target branch before running tests. If your branch is behind `main`, CI will merge in newer commits that may introduce **silent conflicts** — no git merge conflicts, but tests break due to changed dependencies, renamed mocks, updated shared utilities, etc. This is an "effet papillon" (butterfly effect) that is invisible locally.
+
+**Lesson learned**: We lost multiple CI builds debugging "flaky tests" that were actually caused by the branch being out of date with main. The tests passed locally because we were running against old code.
+
+```bash
+git fetch origin main
+git rebase origin/main
+```
+
+#### If rebase has conflicts:
+⚠️ **NEVER resolve conflicts automatically.** Cascade must NOT touch any conflicting files.
+Do NOT interrupt the workflow or wait for user input — just mention the conflict and keep going.
+1. **Report** the conflict details in the chat (which files, which sections)
+2. **Propose** how to resolve each conflict (explain what both sides changed and suggest a resolution strategy)
+3. **Let the user decide** — the user will either resolve the conflicts themselves or ask Cascade for help
+4. Once the user confirms conflicts are resolved: `git rebase --continue`
+5. **Re-run tests** (go back to Step 3.5) — this is mandatory after any conflict resolution
+
+#### If rebase is clean (no conflicts):
+- **Still re-run tests** if `git rebase` applied commits (i.e., the branch was behind main)
+- If the branch was already up-to-date (rebase says "Current branch is up to date"), no need to re-run tests
+- To check: compare `git rev-parse HEAD` before and after rebase. If it changed, re-run tests.
+
+#### Summary:
+| Rebase result | Action |
+|---|---|
+| Already up-to-date | Continue to Step 5 |
+| Clean rebase (commits applied) | Re-run Step 3.5, then continue |
+| Conflicts resolved | Re-run Step 3.5, then continue |
 
 ### 5. Push branch
 - Push manually if authentication fails from CLI
@@ -253,6 +287,7 @@ For each item, Cascade must actively verify (not just assume). If any item fails
 - [ ] **Branch convention**: Branch name matches `<type>/#<task-number>-<short-description>`
 - [ ] **Commit convention**: Commit message matches `<type>(#<task>): <description>`
 - [ ] **Tests passed**: Test-snapshot step completed with 0 failures. Coverage either has 0 regressions OR a soft regression was accepted by the user (documented in "Anything Else?" section)
+- [ ] **Branch synced with main**: Verified via `git rebase origin/main` before push. If rebase applied commits, tests were re-run.
 - [ ] **Clean commit**: Only relevant files in the commit (verified via `git show --stat`)
 - [ ] **PR link shared**: PR URL was displayed in the chat
 
@@ -291,6 +326,8 @@ These are the correct field paths for the Bug type in this project:
 - **Fill bug fields but don't change state** — Cause of bug, Resolution, Origin Developer only
 - **Use git blame for Origin Developer** — find the last person before us who modified the problematic code
 - **ALWAYS run tests before committing** — use the test-snapshot script, never skip this step
+- **ALWAYS sync with remote main before pushing** — `git fetch origin main && git rebase origin/main`. Even without merge conflicts, an outdated branch causes CI failures (butterfly effect). Re-run tests if rebase applied commits
+- **NEVER resolve merge conflicts automatically** — If rebase produces conflicts, report them in the chat, propose a resolution strategy, and let the user resolve them manually. Do NOT edit conflicting files. Do NOT interrupt the workflow or wait — just mention and move on.
 - **Coverage thresholds (3 levels)** — (1) Total < 80% = HARD FAIL (no bypass), (2) File drop > 5% but totals ≥ 80% = FIRM FAIL (bypass with justification, after fix attempt), (3) Drop ≤ 5% and totals ≥ 80% = SOFT FAIL (bypass after fix attempt). Always try to fix first — bypass is last resort
 - **Never propose to publish the PR** — the user publishes it themselves; only ask if the draft looks correct
 - **Never expose internal process details** in PR descriptions (no audit reports, AI tool references, or internal workflow steps)
