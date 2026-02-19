@@ -1,13 +1,13 @@
-# Amelio Team - Windsurf Configuration Bundle
+# Amelio Team Hub
 
-> Self-contained bundle for onboarding Amelio developers.
+> Self-contained repo for onboarding Amelio developers.
 > Installs everything: tools, repos, Docker, databases, configs, IDE, and workspace.
 
 ## Quick Start
 
-1. Place this folder anywhere on your machine
+1. Clone this repo: `git clone https://github.com/joejeanson/amelio-team-hub.git`
 2. Open `windsurf/workspace/Simple.code-workspace` in **Windsurf IDE**
-3. The Team bundle folder is visible in the sidebar ("👥 Team Bundle")
+3. The Team Hub folder is visible in the sidebar ("👥 — 🏠 Amelio Team Hub")
 4. Drag the file `windsurf/global_workflows/amelio-onboarding.md` into the **Cascade chat panel**
 5. Cascade will read the workflow and start the interactive onboarding
 6. Follow the 13 guided steps (~30-45 minutes for a fresh machine)

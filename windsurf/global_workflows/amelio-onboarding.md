@@ -1,5 +1,5 @@
 ---
-description: Complete Amelio developer onboarding — installs dependencies, clones ADO repos, sets up Docker/databases, configures all projects, deploys Windsurf config from Team bundle, generates workspace, and verifies setup. Use for new team members or new machines.
+description: Complete Amelio developer onboarding — installs dependencies, clones ADO repos, sets up Docker/databases, configures all projects, deploys Windsurf config from amelio-team-hub, generates workspace, and verifies setup. Use for new team members or new machines.
 ---
 
 # Amelio Onboarding
@@ -14,10 +14,10 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
 
 ## CONTEXT
-The user has received the Team bundle folder and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
-The first folder visible in the sidebar is **"👥 Team Bundle (START HERE)"** — this IS the bundle.
+The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
+The first folder visible in the sidebar is **"👥 — 🏠 Amelio Team Hub"** — this IS the team hub repo.
 The user dragged this workflow file into the Cascade chat panel to start the onboarding.
-All source files (skills, workflows, rules, extensions lists, workspace template, config files) are **inside this bundle**.
+All source files (skills, workflows, rules, extensions lists, workspace template, config files) are **inside this repo**.
 **No external personal repositories are used** — only Azure DevOps ameliodev repos.
 
 ---
@@ -30,13 +30,18 @@ Display a welcome message (in the user's chat language per BEHAVIOR RULES):
 > This includes: system tools, 5 repos, Docker, databases, IDE config, and project setup.
 > Before we start, I need a few pieces of information.
 
-### 0b — Detect OS, user, and Team bundle location
+### 0b — Detect OS, user, and Team Hub location
 // turbo
 ```bash
 echo "OS=$(uname -s)" && echo "USER=$(whoami)" && echo "HOME=$HOME"
 ```
 
-Detect `TEAM_DIR` automatically: look for the workspace root folder named "👥 Team Bundle (START HERE)" in the current Windsurf workspace. The `TEAM_DIR` is the path of that folder.
+Detect `TEAM_DIR` automatically using this strategy (in order):
+1. **From this workflow file's path**: this file lives at `TEAM_DIR/windsurf/global_workflows/amelio-onboarding.md` — resolve two levels up to get `TEAM_DIR`
+2. **Search the current workspace**: look for the folder named `"👥 — 🏠 Amelio Team Hub"` in the Windsurf workspace roots
+3. **Search common locations**: look for a directory named `amelio-team-hub` in `~/`, `~/Desktop/`, `~/Downloads/`, and the current working directory
+
+The `TEAM_DIR` is the root of the `amelio-team-hub` repo (contains `README.md`, `setup.sh`, `windsurf/`, `config-files/`).
 If detection fails, ask the user to confirm the path.
 
 ### 0c — Ask installation directory
@@ -180,9 +185,9 @@ ls -1 "${FS_DIR}"
 
 ---
 
-## Step 4 — Deploy Windsurf Configuration (from Team bundle)
+## Step 4 — Deploy Windsurf Configuration (from amelio-team-hub)
 
-All source files come from `${TEAM_DIR}` — the bundle folder the user opened in Windsurf.
+All source files come from `${TEAM_DIR}` — the amelio-team-hub repo the user cloned.
 
 ### 4a — Deploy rules
 ```bash
@@ -514,7 +519,7 @@ Report: X succeeded, Y failed. If any failed, propose manual install.
 Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Simple.code-workspace`.
 
 Modifications to apply:
-1. **Remove** the first folder entry `"👥 Team Bundle (START HERE)"` (path `"../.."`), as it is only needed for the initial onboarding
+1. **Remove** the first folder entry `"👥 — 🏠 Amelio Team Hub"` (path `"../.."`), as it is only needed for the initial onboarding
 2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` path chosen in Step 0:
    - macOS: `/Users/${USERNAME}/Amelio_primary` (or custom path)
    - Windows: `C:/Users/${USERNAME}/Amelio_primary` (use forward slashes for VS Code)

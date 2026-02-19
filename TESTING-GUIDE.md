@@ -1,4 +1,4 @@
-# Team Bundle — Testing Guide
+# Amelio Team Hub — Testing Guide
 
 > Test the onboarding workflow from scratch to validate the full 13-step experience.
 
@@ -24,29 +24,12 @@
 3. Open Windsurf once to complete initial setup
 4. Sign in with your Codeium account (or create a test one)
 
-### 1c — Copy the Team bundle
+### 1c — Clone the Team Hub
 
-From your main account, the bundle is at:
-```
-/Users/m--server/Amelio_primary/REPOs/👥Team/
-```
-
-**Option A** — Shared folder (easiest):
+From the testdev account:
 ```bash
-# From your MAIN account terminal, make it readable:
-chmod -R a+rX /Users/m--server/Amelio_primary/REPOs/👥Team/
-```
-Then from testdev account:
-```bash
-cp -R /Users/m--server/Amelio_primary/REPOs/👥Team/ ~/Desktop/Team/
-```
-
-**Option B** — USB/AirDrop/zip:
-```bash
-# From main account:
-cd /Users/m--server/Amelio_primary/REPOs/
-zip -r ~/Desktop/Team-Bundle.zip 👥Team/
-# Transfer to testdev Desktop, unzip
+cd ~/Desktop
+git clone https://github.com/joejeanson/amelio-team-hub.git
 ```
 
 ### 1d — Prepare DB_Freemium dump (optional but recommended)
@@ -58,8 +41,8 @@ cp -R /Users/m--server/Amelio_primary/DB_Freemium/ /Users/Shared/DB_Freemium/
 ### 1e — Run the onboarding test
 
 1. Open Windsurf
-2. File → Open Workspace from File → select `~/Desktop/Team/windsurf/workspace/Simple.code-workspace`
-3. The sidebar should show **"👥 Team Bundle (START HERE)"** as the first folder
+2. File → Open Workspace from File → select `~/Desktop/amelio-team-hub/windsurf/workspace/Simple.code-workspace`
+3. The sidebar should show **"👥 — 🏠 Amelio Team Hub"** as the first folder
 4. In the sidebar, navigate to `windsurf/global_workflows/amelio-onboarding.md`
 5. **Drag that file into the Cascade chat panel**
 6. Cascade should read the workflow and start the interactive onboarding
@@ -68,7 +51,7 @@ cp -R /Users/m--server/Amelio_primary/DB_Freemium/ /Users/Shared/DB_Freemium/
 
 | # | Step | Check | Expected | Status |
 |---|------|-------|----------|--------|
-| 1 | — | Workspace opens correctly | Team Bundle visible in sidebar | ☐ |
+| 1 | — | Workspace opens correctly | Amelio Team Hub visible in sidebar | ☐ |
 | 2 | — | Drag .md into Cascade | Cascade reads and starts onboarding | ☐ |
 | 3 | 0 | OS detection | Detects "Darwin", correct username | ☐ |
 | 4 | 0 | Install path prompt | Asks where to install (default ~/Amelio_primary) | ☐ |
@@ -137,27 +120,21 @@ cp -R /Users/m--server/Amelio_primary/DB_Freemium/ /Users/Shared/DB_Freemium/
 3. Install and open Windsurf
 4. Sign in with your Codeium account
 
-### 2d — Transfer the Team bundle
+### 2d — Clone the Team Hub
 
-**Option A** — UTM shared folder:
-1. In UTM VM settings → Sharing → add a shared directory pointing to the Team bundle
-2. In Windows, access it via Network or mapped drive
+In the Windows VM, open PowerShell:
+```powershell
+cd ~\Desktop
+git clone https://github.com/joejeanson/amelio-team-hub.git
+```
 
-**Option B** — Zip + download:
-1. From your Mac, host the zip temporarily:
-   ```bash
-   cd /Users/m--server/Amelio_primary/REPOs/
-   zip -r /tmp/Team-Bundle.zip 👥Team/
-   cd /tmp && python3 -m http.server 8080
-   ```
-2. In the VM browser: `http://10.0.2.2:8080/Team-Bundle.zip` (UTM NAT gateway)
-3. Download and unzip to `C:\Users\TestDev\Desktop\Team\`
+> If git is not installed yet, download it from https://git-scm.com/download/win first.
 
 ### 2e — Run the onboarding test
 
 1. Open Windsurf
-2. File → Open Workspace from File → select `C:\Users\TestDev\Desktop\Team\windsurf\workspace\Simple.code-workspace`
-3. Sidebar should show **"👥 Team Bundle (START HERE)"**
+2. File → Open Workspace from File → select `C:\Users\TestDev\Desktop\amelio-team-hub\windsurf\workspace\Simple.code-workspace`
+3. Sidebar should show **"👥 — 🏠 Amelio Team Hub"**
 4. Navigate to `windsurf/global_workflows/amelio-onboarding.md`
 5. **Drag that file into the Cascade chat panel**
 
@@ -165,7 +142,7 @@ cp -R /Users/m--server/Amelio_primary/DB_Freemium/ /Users/Shared/DB_Freemium/
 
 | # | Step | Check | Expected | Status |
 |---|------|-------|----------|--------|
-| 1 | — | Workspace opens correctly | Team Bundle visible in sidebar | ☐ |
+| 1 | — | Workspace opens correctly | Amelio Team Hub visible in sidebar | ☐ |
 | 2 | — | Drag .md into Cascade | Cascade reads and starts onboarding | ☐ |
 | 3 | 0 | OS detection | Detects Windows, correct username | ☐ |
 | 4 | 0 | Install path prompt | Default: C:\Users\TestDev\Amelio_primary | ☐ |
