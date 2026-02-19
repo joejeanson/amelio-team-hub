@@ -177,7 +177,7 @@ if [[ -f "$WS_TEMPLATE" ]]; then
     # Detect install mode: if REPOs/ exists inside team-hub, it's parent mode
     if [[ -d "$SCRIPT_DIR/REPOs" ]]; then
         AMELIO_DIR="$SCRIPT_DIR"
-        WS_OUTPUT="$SCRIPT_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
+        WS_OUTPUT="$SCRIPT_DIR/WorkSpace/Amelio_${WS_USER}.code-workspace"
         echo -e "   ${BLUE}├─ Mode: team-hub as parent${NC}"
     else
         # Cross-platform home detection (works in Git Bash on Windows too)
@@ -188,19 +188,19 @@ if [[ -f "$WS_TEMPLATE" ]]; then
             MINGW*|MSYS*|CYGWIN*|Windows) AMELIO_DIR="/c/Users/${WS_USER}/Amelio_primary" ;;
             *)       AMELIO_DIR="/home/${WS_USER}/Amelio_primary" ;;
         esac
-        WS_OUTPUT="$AMELIO_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
+        WS_OUTPUT="$AMELIO_DIR/WorkSpace/Amelio_${WS_USER}.code-workspace"
         echo -e "   ${BLUE}├─ Mode: separate Amelio_primary${NC}"
     fi
 
     if [[ "$MODE" == "install" ]]; then
         mkdir -p "$(dirname "$WS_OUTPUT")"
         sed "s|<AMELIO_DIR>|${AMELIO_DIR}|g" "$WS_TEMPLATE" > "$WS_OUTPUT"
-        echo -e "   ${GREEN}├─ Generated: Simple_${WS_USER}.code-workspace${NC}"
+        echo -e "   ${GREEN}├─ Generated: Amelio_${WS_USER}.code-workspace${NC}"
     else
         if [[ -f "$WS_OUTPUT" ]]; then
-            echo -e "   ${GREEN}├─ Simple_${WS_USER}.code-workspace: EXISTS${NC}"
+            echo -e "   ${GREEN}├─ Amelio_${WS_USER}.code-workspace: EXISTS${NC}"
         else
-            echo -e "   ${YELLOW}├─ Simple_${WS_USER}.code-workspace: WILL BE GENERATED${NC}"
+            echo -e "   ${YELLOW}├─ Amelio_${WS_USER}.code-workspace: WILL BE GENERATED${NC}"
             CHANGES=$((CHANGES + 1))
         fi
     fi
