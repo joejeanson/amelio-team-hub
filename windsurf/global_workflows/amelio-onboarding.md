@@ -12,6 +12,7 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 - **Chat in the language chosen by the user in Step 0a** (`CHAT_LANG`), all generated files/code/configs in **English**
 - **Do NOT skip steps** — if a tool is already installed, confirm version and move on
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything
+- **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (`winget`) since Git Bash isn't installed yet.
 
 ## CONTEXT
 The user has cloned the `amelio-team-hub` repo from GitHub and opened `windsurf/workspace/Simple.code-workspace` in Windsurf.
@@ -161,11 +162,24 @@ brew install --cask mongodb-compass docker
 
 ### 1c — Install missing tools (Windows)
 If `OS_TYPE` = `Windows_NT`:
-Use `winget` (built-in Windows 11) to install ONLY missing tools:
+Use `winget` (built-in Windows 11) to install ONLY missing tools.
+
+**IMPORTANT: Install Git FIRST** — it includes Git Bash which provides the Unix shell environment needed for all subsequent steps.
+```powershell
+# Install Git first (includes Git Bash)
+winget install --id Git.Git -e
+```
+
+After Git is installed, tell the user:
+> Git Bash is now available. For the rest of this onboarding, I will use Git Bash commands.
+> **Please configure Windsurf to use Git Bash as default terminal:**
+> Settings > Terminal > Default Profile (Windows) > **Git Bash**
+> Or add to settings.json: `"terminal.integrated.defaultProfile.windows": "Git Bash"`
+
+Then install remaining tools:
 ```powershell
 winget install --id OpenJS.NodeJS.LTS -e
 winget install --id Yarn.Yarn -e
-winget install --id Git.Git -e
 winget install --id GitHub.cli -e
 winget install --id Microsoft.DotNet.SDK.8 -e
 winget install --id Microsoft.AzureCLI -e
@@ -174,6 +188,8 @@ winget install --id MongoDB.Shell -e
 winget install --id MongoDB.Compass.Full -e
 winget install --id Docker.DockerDesktop -e
 ```
+
+**After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
 
 ### 1d — Docker Desktop
 After install, tell user: **Open Docker Desktop and wait for it to fully start** before continuing.

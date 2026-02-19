@@ -75,7 +75,16 @@ sync_folder() {
 
     if [[ "$MODE" == "install" ]]; then
         mkdir -p "$dst"
-        rsync -a --delete --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/"
+        if command -v rsync &>/dev/null; then
+            rsync -a --delete --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/"
+        else
+            # Fallback for Git Bash on Windows (no rsync)
+            rm -rf "$dst"
+            mkdir -p "$dst"
+            cp -R "$src/"* "$dst/" 2>/dev/null || true
+            find "$dst" -name '.DS_Store' -delete 2>/dev/null || true
+            find "$dst" -name '*.bak' -delete 2>/dev/null || true
+        fi
         echo -e "   ${GREEN}├─ $name: synced $src_count files${NC}"
     else
         if [[ ! -d "$dst" ]]; then
@@ -83,7 +92,12 @@ sync_folder() {
             CHANGES=$((CHANGES + src_count))
         else
             local diff_count
-            diff_count=$(rsync -a --delete --dry-run --itemize-changes --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/" 2>/dev/null | grep -c '^' || true)
+            if command -v rsync &>/dev/null; then
+                diff_count=$(rsync -a --delete --dry-run --itemize-changes --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/" 2>/dev/null | grep -c '^' || true)
+            else
+                # Fallback: use diff -rq (available in Git Bash)
+                diff_count=$(diff -rq "$src" "$dst" 2>/dev/null | grep -cv -e '.DS_Store' -e '.bak' || echo "0")
+            fi
             if [[ "$diff_count" -gt 0 ]]; then
                 echo -e "   ${YELLOW}├─ $name: $diff_count files to update${NC}"
                 CHANGES=$((CHANGES + diff_count))
@@ -166,11 +180,14 @@ if [[ -f "$WS_TEMPLATE" ]]; then
         WS_OUTPUT="$SCRIPT_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
         echo -e "   ${BLUE}├─ Mode: team-hub as parent${NC}"
     else
-        if [[ "$(uname)" == "Darwin" ]]; then
-            AMELIO_DIR="/Users/${WS_USER}/Amelio_primary"
-        else
-            AMELIO_DIR="/home/${WS_USER}/Amelio_primary"
-        fi
+        # Cross-platform home detection (works in Git Bash on Windows too)
+        local os_name
+        os_name=$(uname -s 2>/dev/null || echo "Windows")
+        case "$os_name" in
+            Darwin)  AMELIO_DIR="/Users/${WS_USER}/Amelio_primary" ;;
+            MINGW*|MSYS*|CYGWIN*|Windows) AMELIO_DIR="/c/Users/${WS_USER}/Amelio_primary" ;;
+            *)       AMELIO_DIR="/home/${WS_USER}/Amelio_primary" ;;
+        esac
         WS_OUTPUT="$AMELIO_DIR/REPOs/WorkSpace/Simple_${WS_USER}.code-workspace"
         echo -e "   ${BLUE}├─ Mode: separate Amelio_primary${NC}"
     fi
