@@ -96,11 +96,11 @@ Store variables:
 
 **Step 1 — Create your `.env` file from the template:**
 ```bash
-cp "${TEAM_DIR}/.env.simple" "${TEAM_DIR}/.env"
+cp "${TEAM_DIR}/.env.template" "${TEAM_DIR}/.env"
 ```
 On Windows (PowerShell):
 ```powershell
-Copy-Item "${TEAM_DIR}/.env.simple" "${TEAM_DIR}/.env"
+Copy-Item "${TEAM_DIR}/.env.template" "${TEAM_DIR}/.env"
 ```
 
 **Step 2 — Open `${TEAM_DIR}/.env` and replace `your-azure-devops-pat-here`** with your real PAT.
