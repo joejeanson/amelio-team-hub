@@ -7,19 +7,19 @@ description: Complete Amelio developer onboarding — installs dependencies, clo
 ## BEHAVIOR RULES (MANDATORY — READ BEFORE DOING ANYTHING ELSE)
 
 > ⚠️ **THIS WORKFLOW MUST BE EXECUTED SEQUENTIALLY, STEP BY STEP, WITHOUT SKIPPING ANYTHING.**
-> When this workflow is invoked, Cascade MUST start at **Step 0a** immediately — no summary, no assumptions, no shortcuts.
+> When this workflow is invoked, Cascade MUST start at **Step 0b** immediately — language, install mode, and clone directory were already collected in `GETTING-STARTED.md`. Do NOT re-ask them.
 > The user invoking this workflow is a new developer who needs full guidance. Treat every step as required unless explicitly marked optional.
 
-- **START AT STEP 0a** — the very first action is always to display the welcome message and ask for the preferred language. Do NOT skip this, even if the user seems to already know what they want.
+- **START AT STEP 0b** — language and install mode are already collected in `GETTING-STARTED.md` before this workflow is invoked. Read `CHAT_LANG` and `INSTALL_MODE` from the session context set there. Skip Step 0a entirely.
 - **NEVER skip a step** — if a tool is already installed, confirm its version and move on. Do NOT assume anything is already set up.
 - **NEVER summarize or compress steps** — execute each sub-step fully, run each command, show each result.
 - **ALWAYS use multiple-choice questions** when user input is needed — never open-ended questions.
 - **NEVER interrupt or stop mid-phase** — execute each step fully, diagnose errors inline.
 - **Task is NEVER complete** until the user explicitly confirms at Step 13 — keep asking after the final step.
 - **On error**: show the error, propose 2-3 fix options as multiple-choice, let user choose, then continue.
-- **Chat in the language chosen by the user in Step 0a** (`CHAT_LANG`), all generated files/code/configs in **English**.
+- **Chat in the language chosen by the user in `GETTING-STARTED.md`** (`CHAT_LANG`), all generated files/code/configs in **English**.
 - **VALIDATE BEFORE INSTALLING** — always check what is already present before installing anything.
-- **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (`winget`) since Git Bash isn't installed yet.
+- **Windows shell strategy**: After Step 1c installs Git (includes Git Bash), **use Git Bash for all subsequent commands**. Git Bash provides a full Unix environment (`bash`, `find`, `sed`, `cp`, `diff`, etc.) making all commands identical to macOS. PowerShell blocks in this workflow are **fallback only** — prefer bash via Git Bash. Step 1c itself uses PowerShell (Chocolatey) since Git Bash isn't installed yet.
 - **🚫 NEVER modify any git-tracked file inside the 5 cloned ADO repositories.** This includes `.npmrc`, `appsettings.json`, `docker-compose.yml`, `package.json`, or ANY other file tracked by git. Always verify with `git status` before touching a file. For local overrides, use ONLY files already listed in `.gitignore` (e.g. `docker-compose.override.yml`, `appsettings.Local.json`, `appsettings.Development.json` if gitignored). Credentials and local config belong in **user-level files** (`~/.npmrc`, `~/.nuget/NuGet/NuGet.Config`) — never in repo files.
 
 ## CONTEXT
@@ -31,23 +31,20 @@ All source files (skills, workflows, rules, extensions lists, workspace template
 
 ---
 
-## Step 0 — Welcome & Interactive Setup
+## Step 0 — Environment Detection & Session Setup
 
-### 0a — Welcome message & language choice
-Display a welcome message in **English** first, then immediately ask the user to choose their preferred chat language:
+> **Note**: `CHAT_LANG`, `INSTALL_MODE`, `FS_DIR`, and `CLONE_DIR` were already collected in `GETTING-STARTED.md`. Resume from those values — do NOT ask again.
 
-> 👋 Welcome to Amelio onboarding! I will configure your complete development environment.
-> This includes: system tools, 5 repos, Docker, databases, IDE config, and project setup.
+### 0b — Enable Gitignore Access (required first)
 
-Ask with a multiple-choice question:
-- **A**: 🇫🇷 Français — Continuer en français
-- **B**: 🇬🇧 English — Continue in English
-- **C**: 🌍 Other — I'll specify my preferred language
+> ⚠️ **Cascade needs access to `.gitignore`d files** (including `.env`) to load the ADO PAT automatically.
+> Ask the user to enable this setting **before continuing**:
+> **Windsurf Settings → Cascade → Gitignore Access → Toggle ON**
+> (Windsurf Settings: `Ctrl+,` → Cascade → scroll to "Gitignore Access")
 
-Store the user's choice as `CHAT_LANG`. From this point on, **all chat messages** must be in the chosen language.
-Code, configs, comments, and generated files remain in **English** regardless of the chat language.
+Once confirmed, continue.
 
-### 0b — Detect OS, user, and Team Hub location
+### 0b-detect — Detect OS, user, and Team Hub location
 // turbo
 ```bash
 echo "OS=$(uname -s)" && echo "USER=$(whoami)" && echo "HOME=$HOME"
@@ -58,44 +55,37 @@ On Windows (PowerShell):
 Write-Host "OS=$([System.Environment]::OSVersion.Platform)" ; Write-Host "USER=$env:USERNAME" ; Write-Host "HOME=$env:USERPROFILE"
 ```
 
-**OS detection note**: Cascade should detect the OS from the shell environment. If `uname` fails or returns nothing, assume Windows. On Windows, `HOME_DIR` = `$env:USERPROFILE` (e.g. `C:\Users\dev`). Use **forward slashes** in all generated paths for VS Code/Windsurf compatibility.
+**OS detection note**: If `uname` fails or returns nothing, assume Windows. On Windows, `HOME_DIR` = `$env:USERPROFILE`. Use **forward slashes** in all generated paths for VS Code/Windsurf compatibility.
 
-Detect `TEAM_DIR` automatically using this strategy (in order):
-1. **From this workflow file's path**: this file lives at `TEAM_DIR/windsurf/global_workflows/amelio-onboarding.md` — resolve two levels up to get `TEAM_DIR`
-2. **Search the current workspace**: look for the folder named `"👥 — 🏠 Amelio Team Hub"` in the Windsurf workspace roots
-3. **Search common locations**: look for a directory named `amelio-team-hub` in `~/`, `~/Desktop/`, `~/Downloads/`, and the current working directory
+Detect `TEAM_DIR` automatically (in order):
+1. From the open workspace — look for folder `"👥 — 🏠 Amelio Team Hub"` in sidebar roots
+2. Search `~/`, `~/Desktop/`, `~/Downloads/`, current working directory for `amelio-team-hub/`
+3. If not found, ask the user to confirm the path
 
-The `TEAM_DIR` is the root of the `amelio-team-hub` repo (contains `README.md`, `setup.sh`, `windsurf/`, `config-files/`).
-If detection fails, ask the user to confirm the path.
+### 0c — Restore session variables from GETTING-STARTED.md choices
 
-### 0c — Ask installation directory
-Ask the user with a multiple-choice question:
-- **A**: Use **this repo as parent** — repos will be cloned inside `amelio-team-hub/REPOs/` (recommended — single root, everything in one place)
-- **B**: Create a separate `~/Amelio_primary` folder — repos cloned there, team-hub stays independent
-- **C**: Install in a different folder (I will specify the path)
+Display the confirmed values — do NOT ask again:
 
-If C, ask the user to type the absolute path.
+| Variable | Value |
+|----------|-------|
+| `CHAT_LANG` | chosen in Step 0a of GETTING-STARTED.md |
+| `INSTALL_MODE` | `A` / `B` / `C` / `D` |
+| `TEAM_DIR` | auto-detected path to `amelio-team-hub/` |
+| `FS_DIR` | depends on mode (see below) |
+| `CFG_DIR` | `${TEAM_DIR}/config-files` |
+| `HOME_DIR` | `$HOME` (macOS) or `$env:USERPROFILE` (Windows) |
 
-**Option A behavior (team-hub as parent)**:
-- `AMELIO_DIR` = `TEAM_DIR` (the amelio-team-hub repo root)
-- `REPOs/` and `DB_Freemium/` are already in `.gitignore` — they will NOT pollute the team-hub git history
-- The workspace file will reference paths relative to the team-hub root
-- Advantage: single `git clone` + onboarding = everything is set up, no scattered directories
+**`FS_DIR` per mode:**
+- **Mode A**: `${TEAM_DIR}/REPOs`
+- **Mode B**: `${TEAM_DIR}/REPOs_primary`
+- **Mode C**: `${TEAM_DIR}/REPOs_secondary`
+- **Mode D**: `${CUSTOM_PATH}/REPOs` — if Mode D, ask the user for `CUSTOM_PATH` now (absolute path where `amelio-team-hub/` was cloned, e.g. `/Users/dev/projects` or `C:/dev`). Set `TEAM_DIR` = `${CUSTOM_PATH}/amelio-team-hub`, `FS_DIR` = `${CUSTOM_PATH}/REPOs`.
 
-**Option B/C behavior (separate directory)**:
-- `AMELIO_DIR` = `${HOME_DIR}/Amelio_primary` (or user-specified path)
-- Team-hub repo remains a standalone config bundle
-- Classic layout with repos in a separate directory tree
-
-Store variables:
-- `OS_TYPE` = `Darwin` (macOS) or `Linux` or `Windows_NT`
-- `USERNAME` = result of `whoami`
-- `HOME_DIR` = `$HOME` (macOS/Linux) or `$env:USERPROFILE` (Windows)
-- `INSTALL_MODE` = `team-hub-parent` (A) or `separate` (B/C)
-- `AMELIO_DIR` = `TEAM_DIR` if mode A, else user's chosen path (default: `${HOME_DIR}/Amelio_primary`)
-- `FS_DIR` = `${AMELIO_DIR}/REPOs`
-- `TEAM_DIR` = auto-detected bundle path
-- `CFG_DIR` = `${TEAM_DIR}/config-files`
+**`.gitignore` check** — verify `amelio-team-hub/.gitignore` includes the active `FS_DIR` folder. If missing, add it:
+```bash
+echo "REPOs_primary/" >> "${TEAM_DIR}/.gitignore"
+echo "REPOs_secondary/" >> "${TEAM_DIR}/.gitignore"
+```
 
 ### 0d — Set up Azure DevOps PAT (via .env file)
 
@@ -131,21 +121,18 @@ Get-Content "${TEAM_DIR}/.env" | Where-Object { $_ -notmatch '^\s*#' -and $_ -ma
 Write-Host "ADO_PAT loaded: $($env:ADO_PAT.Substring(0,4))****"
 ```
 
-Confirm the PAT is loaded (shows first 4 chars only). Store as `ADO_PAT` for use in Step 3 and Step 12.
+Confirm the PAT is loaded (shows first 4 chars only). Store as `ADO_PAT` for use in Steps 3 and 12.
 
 ### 0e — Confirm before proceeding
 Present a summary and ask for confirmation:
 > **Configuration summary:**
 > - OS: [detected]
 > - User: [detected]
-> - Install mode: [team-hub-parent / separate]
-> - Installation directory: [chosen path]
-> - Azure DevOps PAT: [masked, e.g. "****abcd"]
->
-> If mode is `team-hub-parent`, also display:
-> - Team Hub repo: [TEAM_DIR]
-> - Repos will be cloned inside: [TEAM_DIR]/REPOs/
-> - `.gitignore` already excludes `REPOs/` and `DB_Freemium/`
+> - Language: [CHAT_LANG]
+> - Install mode: [A / B / C / D]
+> - Team Hub: [TEAM_DIR]
+> - Repos directory: [FS_DIR]
+> - Azure DevOps PAT: [masked, e.g. "abcd****"]
 >
 > **Ready to start?**
 - **A**: All good, let's go!
@@ -253,36 +240,77 @@ git config --global user.email "[email@example.com]"
 
 ### 1c — Install missing tools (Windows)
 If `OS_TYPE` = `Windows_NT`:
-Use `winget` (built-in Windows 11) to install ONLY missing tools.
 
-**IMPORTANT: Install Git FIRST** — it includes Git Bash which provides the Unix shell environment needed for all subsequent steps.
+**Step 0 — Fix PowerShell ExecutionPolicy (required before any script runs):**
 ```powershell
-# Install Git first (includes Git Bash)
-winget install --id Git.Git -e
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+Write-Host "=== ExecutionPolicy set ==="
+```
+
+> 🔑 **All `choco` commands below require a PowerShell terminal opened as Administrator.**
+> Tell the user: **Right-click on PowerShell in the Start menu → "Run as administrator"**, then paste the commands below.
+> Cascade cannot run elevated commands directly — the user must paste them in the admin terminal and report the output.
+
+**Step 1 — Install Chocolatey (paste in PowerShell Admin):**
+```powershell
+# Run in PowerShell (Admin)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+choco -v
+```
+
+**Step 2 — Install Git first, then all tools (paste in PowerShell Admin):**
+```powershell
+# Run in PowerShell (Admin)
+choco install git -y
+choco install nodejs-lts yarn gh -y
+choco install dotnet-8.0-sdk -y
+choco install mongodb mongodb-shell mongodb-compass -y
+Write-Host "=== Tools installed (except Docker) ==="
+```
+
+**Step 3b — Enable WSL2 then install Docker Desktop (paste in PowerShell Admin):**
+```powershell
+# Run in PowerShell (Admin)
+wsl --install --no-distribution
+Write-Host "=== WSL2 enabled — REBOOT if prompted before continuing ==="
+```
+> After reboot (if required), install Docker Desktop:
+```powershell
+# Run in PowerShell (Admin)
+choco install docker-desktop -y
+Write-Host "=== Docker Desktop installed ==="
+```
+
+> **Note on Docker Desktop**: After install, launch Docker Desktop from the Start menu and wait for the whale icon in the system tray before continuing.
+
+After the admin terminal confirms `=== All tools installed ===`, come back here and run:
+```powershell
+# Run in Cascade terminal — reload PATH
+$env:PATH = [System.Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH','User')
+node -v; npm -v; yarn -v; git --version; dotnet --version; gh --version
 ```
 
 After Git is installed, tell the user:
-> Git Bash is now available. For the rest of this onboarding, I will use Git Bash commands.
-> **Please configure Windsurf to use Git Bash as default terminal:**
-> Settings > Terminal > Default Profile (Windows) > **Git Bash**
-> Or add to settings.json: `"terminal.integrated.defaultProfile.windows": "Git Bash"`
+> Git Bash is now available. For the rest of this onboarding, open a new terminal in Windsurf and **select Git Bash from the terminal profile dropdown** (the `+` button dropdown in the terminal panel).
 
-Then install remaining tools:
+**Install dotnet-ef (Entity Framework CLI) — both paths:**
 ```powershell
-winget install --id OpenJS.NodeJS.LTS -e
-winget install --id Yarn.Yarn -e
-winget install --id GitHub.cli -e
-winget install --id Microsoft.DotNet.SDK.8 -e
-winget install --id Microsoft.AzureCLI -e
-winget install --id MongoDB.Server -e
-winget install --id MongoDB.Shell -e
-winget install --id MongoDB.Compass.Full -e
-winget install --id Docker.DockerDesktop -e
+dotnet tool install --global dotnet-ef
+$env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+dotnet ef --version
 ```
 
-**After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
+**Configure git global identity:**
+```powershell
+git config --global user.name "[Full Name]"
+git config --global user.email "[email@example.com]"
+```
 
 > **Note**: Colima (headless Docker Engine) is **macOS only**. On Windows, Docker Desktop is the standard approach.
+
+**After this step, switch to Git Bash terminal** for all remaining commands. All bash commands in this workflow are compatible with Git Bash on Windows.
 
 ### 1d — Docker Engine (verify running)
 
@@ -319,28 +347,26 @@ Write-Host "=== Final verification ==="; node -v; npm -v; yarn -v; dotnet --vers
 
 ## Step 2 — Create Directory Structure
 
-Both modes create the same subdirectory structure — the only difference is where `AMELIO_DIR` points.
+All modes use `TEAM_DIR` as the root — `FS_DIR` is the only variable that changes per mode.
 
-**If `INSTALL_MODE` = `team-hub-parent`**: `AMELIO_DIR` = `TEAM_DIR` (the amelio-team-hub repo root).
-The `REPOs/` and `DB_Freemium/` directories will be created **inside** the team-hub repo, but they are excluded from git via `.gitignore`.
+**Mode A** — `FS_DIR` = `${TEAM_DIR}/REPOs` — single env, everything inside team-hub.
+**Mode B** — `FS_DIR` = `${TEAM_DIR}/REPOs_primary` — primary env.
+**Mode C** — `FS_DIR` = `${TEAM_DIR}/REPOs_secondary` — secondary env (alongside primary).
+**Mode D** — `FS_DIR` = `${CUSTOM_PATH}/REPOs` — custom path chosen in Step 0c.
 
-**If `INSTALL_MODE` = `separate`**: `AMELIO_DIR` = `~/Amelio_primary` (or custom path).
+Create the repos directory and DB dump directory:
 
 ```bash
-mkdir -p "${AMELIO_DIR}/REPOs"
-mkdir -p "${AMELIO_DIR}/Documentations"
-mkdir -p "${AMELIO_DIR}/WorkSpace"
-mkdir -p "${AMELIO_DIR}/DB_Freemium"
+mkdir -p "${FS_DIR}"
+mkdir -p "${TEAM_DIR}/DB_Freemium"
 ```
 
-> **Layout note**: `Documentations/` and `WorkSpace/` are created **at the root of `AMELIO_DIR`** (beside `windsurf/`, `REPOs/`, etc.) — NOT inside `REPOs/`. The 5 cloned repos go directly inside `REPOs/` with no intermediate subfolder.
+> **Layout note**: `DB_Freemium/` is always at `${TEAM_DIR}/DB_Freemium/` — shared across all modes. The 5 cloned repos go directly inside `${FS_DIR}/` with no intermediate subfolder.
 
 On Windows (PowerShell):
 ```powershell
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\REPOs"
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\Documentations"
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\WorkSpace"
-New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
+New-Item -ItemType Directory -Force -Path "${FS_DIR}"
+New-Item -ItemType Directory -Force -Path "${TEAM_DIR}\DB_Freemium"
 ```
 
 ---
@@ -476,7 +502,17 @@ docker start amelio_mongodb 2>/dev/null || true
 
 On Windows (PowerShell):
 ```powershell
-docker start amelio_mongodb 2>$null; if (-not $?) { Write-Host "Container not found, creating..." }
+$exists = docker ps -a --format '{{.Names}}' | Select-String 'amelio_mongodb'
+if ($exists) {
+  docker start amelio_mongodb
+} else {
+  docker run -d --name amelio_mongodb `
+    -p 27017:27017 `
+    -e MONGO_INITDB_ROOT_USERNAME=ameliodb `
+    -e MONGO_INITDB_ROOT_PASSWORD=ameliodb `
+    --restart unless-stopped `
+    mongo
+}
 ```
 
 ### 5b — Create docker-compose.override.yml for Performance Backend
@@ -575,14 +611,14 @@ DB_FOLDER=$(ls -dt "${DOWNLOADS}"/DB_Freemium* 2>/dev/null | grep -v '\.zip' | h
 
 if [ -n "$DB_ZIP" ]; then
   echo "Found zip: ${DB_ZIP}"
-  unzip -o "${DB_ZIP}" -d "${AMELIO_DIR}"
+  unzip -o "${DB_ZIP}" -d "${TEAM_DIR}"
   rm "${DB_ZIP}"
-  echo "Extracted to ${AMELIO_DIR}/"
+  echo "Extracted to ${TEAM_DIR}/"
 elif [ -n "$DB_FOLDER" ]; then
   echo "Found folder: ${DB_FOLDER}"
-  mkdir -p "${AMELIO_DIR}/DB_Freemium"
-  cp -R "${DB_FOLDER}/." "${AMELIO_DIR}/DB_Freemium/"
-  echo "Copied to ${AMELIO_DIR}/DB_Freemium/"
+  mkdir -p "${TEAM_DIR}/DB_Freemium"
+  cp -R "${DB_FOLDER}/." "${TEAM_DIR}/DB_Freemium/"
+  echo "Copied to ${TEAM_DIR}/DB_Freemium/"
 else
   echo "ERROR: No DB_Freemium zip or folder found in ~/Downloads/ — check the download completed."
 fi
@@ -596,14 +632,14 @@ $dbFolder = Get-ChildItem "$downloads" -Directory | Where-Object { $_.Name -like
 
 if ($dbZip) {
   Write-Host "Found zip: $($dbZip.FullName)"
-  Expand-Archive -Path $dbZip.FullName -DestinationPath "${AMELIO_DIR}" -Force
+  Expand-Archive -Path $dbZip.FullName -DestinationPath "${TEAM_DIR}" -Force
   Remove-Item $dbZip.FullName
-  Write-Host "Extracted to ${AMELIO_DIR}\"
+  Write-Host "Extracted to ${TEAM_DIR}\"
 } elseif ($dbFolder) {
   Write-Host "Found folder: $($dbFolder.FullName)"
-  New-Item -ItemType Directory -Force -Path "${AMELIO_DIR}\DB_Freemium"
-  Copy-Item "$($dbFolder.FullName)\*" "${AMELIO_DIR}\DB_Freemium\" -Recurse -Force
-  Write-Host "Copied to ${AMELIO_DIR}\DB_Freemium\"
+  New-Item -ItemType Directory -Force -Path "${TEAM_DIR}\DB_Freemium"
+  Copy-Item "$($dbFolder.FullName)\*" "${TEAM_DIR}\DB_Freemium\" -Recurse -Force
+  Write-Host "Copied to ${TEAM_DIR}\DB_Freemium\"
 } else {
   Write-Host "ERROR: No DB_Freemium zip or folder found in Downloads — check the download completed."
 }
@@ -611,13 +647,13 @@ if ($dbZip) {
 
 Verify the dump is in place:
 ```bash
-ls "${AMELIO_DIR}/DB_Freemium/Freemium/" | head -5
+ls "${TEAM_DIR}/DB_Freemium/Freemium/" | head -5
 ```
 Expected: `.bson.gz` and `.metadata.json.gz` files. If the structure differs (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust `DB_PATH` in the next step accordingly.
 
 **Step 3 — Import into MongoDB:**
 
-Use: `DB_PATH="${AMELIO_DIR}/DB_Freemium/Freemium"`
+Use: `DB_PATH="${TEAM_DIR}/DB_Freemium/Freemium"`
 If the structure differs (e.g. `DB_Freemium/DB_Freemium/Freemium/`), adjust accordingly.
 
 ```bash
@@ -691,6 +727,7 @@ Expected: empty output. If not empty, stop and investigate before proceeding.
 **Step 2 — Apply connection string changes with `sed`:**
 
 ```bash
+# macOS only (BSD sed requires empty string after -i)
 # File 1 — IdentityServer/appsettings.json
 sed -i '' 's|"MongoConnection": "mongodb://[^"]*"|"MongoConnection": "mongodb://ameliodb:ameliodb@localhost:27017/Freemium?authSource=admin"|g' \
   "${FS_DIR}/Amelio - Back-End/IdentityServer/appsettings.json"
@@ -1074,20 +1111,12 @@ For **E** (skip), tell the user:
 ## Step 10 — Generate Personalized Workspace
 
 Read the workspace template from `${TEAM_DIR}/windsurf/workspace/Template.code-workspace`.
+The generated workspace file is always saved in **`${TEAM_DIR}/windsurf/workspace/`** (same folder as the template).
 
-### If `INSTALL_MODE` = `team-hub-parent`
-Modifications to apply:
-1. **Keep** the first folder entry `"👥 — 🏠 Amelio Team Hub"` and keep its `path` as `".."` — the workspace file is saved in `${AMELIO_DIR}/WorkSpace/`, so `".."` correctly resolves one level up to the team-hub root
-2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` (= `${TEAM_DIR}`) path:
-   - macOS: e.g. `/Users/${USERNAME}/amelio-team-hub` (wherever the repo was cloned)
-   - Windows: use forward slashes for VS Code
-
-### If `INSTALL_MODE` = `separate`
-Modifications to apply:
-1. **Remove** the first folder entry `"👥 — 🏠 Amelio Team Hub"` (path `".."`), as it is only relevant when the team-hub is the parent directory
-2. **Replace** ALL `<AMELIO_DIR>` with the actual `${AMELIO_DIR}` path chosen in Step 0:
-   - macOS: `/Users/${USERNAME}/Amelio_primary` (or custom path)
-   - Windows: `C:/Users/${USERNAME}/Amelio_primary` (use forward slashes for VS Code)
+**Modifications to apply for all modes:**
+1. **Keep** the first folder entry `"👥 — 🏠 Amelio Team Hub"` with `path` = `"../.."` (workspace is in `windsurf/workspace/`, so `"../.."` resolves to the team-hub root)
+2. **Replace** ALL `<FS_DIR>` placeholders with the actual `${FS_DIR}` path (use forward slashes for VS Code/Windsurf compatibility on all platforms)
+3. **Replace** ALL `<TEAM_DIR>` placeholders with the actual `${TEAM_DIR}` path
 
 **Ask the user TWO questions at once** — filename AND color theme — before generating the file.
 
@@ -1127,7 +1156,7 @@ Store the chosen theme colors as `THEME_BG` and `THEME_ACCENT`:
 
 **IMPORTANT — NEVER overwrite an existing file.** Before saving, check if the target file already exists:
 ```bash
-WORKSPACE_FILE="${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace"
+WORKSPACE_FILE="${TEAM_DIR}/windsurf/workspace/${CHOSEN_NAME}.code-workspace"
 if [ -f "$WORKSPACE_FILE" ]; then
   echo "ERROR: File already exists: $WORKSPACE_FILE"
   echo "Choose a different name to avoid overwriting."
@@ -1154,12 +1183,12 @@ Apply the chosen theme by replacing the `workbench.colorCustomizations` block in
 }
 ```
 
-Save as `${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace`.
+Save as `${TEAM_DIR}/windsurf/workspace/${CHOSEN_NAME}.code-workspace`.
 
 Tell user:
 > Your personalized workspace is ready! Theme: [chosen theme name]
-> **File > Open Workspace from File** and select `${CHOSEN_NAME}.code-workspace`.
-> ⚠️ This file is personal — do NOT commit it to git. Add it to `.gitignore` if needed.
+> **File > Open Workspace from File** and select `${TEAM_DIR}/windsurf/workspace/${CHOSEN_NAME}.code-workspace`.
+> ⚠️ This file is personal — do NOT commit it to git. It is already excluded by `*.code-workspace` in `.gitignore` (except `Template.code-workspace`).
 
 ---
 
@@ -1276,37 +1305,119 @@ After giving DBeaver guidance, ask:
 
 ---
 
-## Step 12 — Optional: Secondary Workspace
+## Step 12 — Optional: Secondary Environment
+
+> **Only relevant if `INSTALL_MODE` = `B` (Primary) or `A` (Single) and the user wants a second parallel environment.**
+> If `INSTALL_MODE` = `C` (Secondary), this step was already done — skip.
 
 Ask the user:
-- **A**: "I want a second workspace to work on two tasks in parallel"
-- **B**: "Skip — one workspace is enough for now"
+- **A**: "I want a second set of repos (`REPOs_secondary`) to work on two tasks in parallel"
+- **B**: "Skip — one environment is enough for now"
 
-If A, create a second directory and clone the same 5 ADO repos:
+If A:
+
+**Step 1 — Create `REPOs_secondary/` inside the same team-hub:**
 ```bash
-mkdir -p "${HOME}/Amelio_secondary/REPOs"
+FS2="${TEAM_DIR}/REPOs_secondary"
+mkdir -p "${FS2}"
+```
+On Windows (PowerShell):
+```powershell
+$FS2 = "${TEAM_DIR}/REPOs_secondary"
+New-Item -ItemType Directory -Force -Path $FS2
+```
+
+**Step 2 — Clone the same 5 ADO repos into `REPOs_secondary/`:**
+```bash
 ADO="https://${ADO_PAT}@dev.azure.com/ameliodev"
-FS2="${HOME}/Amelio_secondary/REPOs"
 git clone "${ADO}/Amelio%20-%20First%20Product/_git/Amelio%20-%20Back-End" "${FS2}/Amelio - Back-End"
 git clone "${ADO}/Amelio%20-%20First%20Product/_git/Amelio%20-%20React" "${FS2}/Amelio - React"
 git clone "${ADO}/Amelio-Performance%20Management/_git/amelio-performance-backend" "${FS2}/amelio-performance-backend"
 git clone "${ADO}/Amelio-Performance%20Management/_git/amelio-performance-fe" "${FS2}/amelio-performance-fe"
 git clone "${ADO}/Amelio-Development%20Packages/_git/amelio-ui-library" "${FS2}/amelio-ui-library"
 ```
+On Windows (Git Bash): same commands — Git Bash handles them identically.
 
+**Step 3 — Create `docker-compose.override.yml` for secondary (offset ports +10):**
+```bash
+cat > "${FS2}/amelio-performance-backend/docker-compose.override.yml" << 'EOF'
+name: performance_management_secondary
+services:
+  dev_db:
+    image: postgres:17
+    ports:
+      - "5442:5432"
+    volumes:
+      - dev_db_data_secondary:/var/lib/postgresql/data
+  test_db:
+    ports:
+      - "5443:5432"
+  dev_cache:
+    ports:
+      - "6389:6379"
+  mailpit:
+    ports:
+      - "8035:8025"
+      - "1035:1025"
+EOF
+echo "docker-compose.override.yml (secondary) created"
+```
 On Windows (PowerShell):
 ```powershell
-$FS2 = "$env:USERPROFILE/Amelio_secondary/REPOs"
-New-Item -ItemType Directory -Force -Path $FS2
-$ADO = "https://${ADO_PAT}@dev.azure.com/ameliodev"
-git clone "$ADO/Amelio%20-%20First%20Product/_git/Amelio%20-%20Back-End" "$FS2/Amelio - Back-End"
-git clone "$ADO/Amelio%20-%20First%20Product/_git/Amelio%20-%20React" "$FS2/Amelio - React"
-git clone "$ADO/Amelio-Performance%20Management/_git/amelio-performance-backend" "$FS2/amelio-performance-backend"
-git clone "$ADO/Amelio-Performance%20Management/_git/amelio-performance-fe" "$FS2/amelio-performance-fe"
-git clone "$ADO/Amelio-Development%20Packages/_git/amelio-ui-library" "$FS2/amelio-ui-library"
+@"
+name: performance_management_secondary
+services:
+  dev_db:
+    image: postgres:17
+    ports:
+      - "5442:5432"
+    volumes:
+      - dev_db_data_secondary:/var/lib/postgresql/data
+  test_db:
+    ports:
+      - "5443:5432"
+  dev_cache:
+    ports:
+      - "6389:6379"
+  mailpit:
+    ports:
+      - "8035:8025"
+      - "1035:1025"
+"@ | Set-Content "${FS2}/amelio-performance-backend/docker-compose.override.yml"
+Write-Host "docker-compose.override.yml (secondary) created"
 ```
 
-Generate a second workspace file using the same template but with `Amelio_secondary` paths.
+**Step 4 — Import MongoDB as `Freemium_secondary` (avoids cross-contamination with primary):**
+```bash
+mongorestore --host localhost:27017 \
+  --username ameliodb --password ameliodb \
+  --authenticationDatabase admin \
+  --db Freemium_secondary \
+  --gzip \
+  "${TEAM_DIR}/DB_Freemium/Freemium/"
+echo "Freemium_secondary imported"
+```
+On Windows (PowerShell):
+```powershell
+mongorestore --host localhost:27017 `
+  --username ameliodb --password ameliodb `
+  --authenticationDatabase admin `
+  --db Freemium_secondary `
+  --gzip `
+  "${TEAM_DIR}\DB_Freemium\Freemium\"
+```
+
+**Step 5 — Generate `AmelioSecondary.code-workspace`** using the same template, replacing `<FS_DIR>` with `${FS2}` and `<TEAM_DIR>` with `${TEAM_DIR}`. Save as `${TEAM_DIR}/windsurf/workspace/AmelioSecondary.code-workspace`.
+
+> **Secondary environment ports reference:**
+> | Service | Primary | Secondary |
+> |---|---|---|
+> | PostgreSQL dev_db | 5432 | 5442 |
+> | PostgreSQL test_db | 5433 | 5443 |
+> | Redis | 6379 | 6389 |
+> | Mailpit UI | 8025 | 8035 |
+> | Mailpit SMTP | 1025 | 1035 |
+> | MongoDB | 27017 | 27017 (shared, base: `Freemium_secondary`) |
 
 ---
 
@@ -1471,7 +1582,7 @@ Tell the user:
 > - `🚀▶️ Running local` — pop this one before starting Legacy Backend services, re-stash after stopping
 >
 > **To open your personalized workspace:**
-> File > Open Workspace from File → `${AMELIO_DIR}/WorkSpace/${CHOSEN_NAME}.code-workspace`
+> File > Open Workspace from File → `${TEAM_DIR}/windsurf/workspace/${CHOSEN_NAME}.code-workspace`
 
 If ALL pass, ask user:
 - **A**: "Everything is perfect, onboarding is complete"

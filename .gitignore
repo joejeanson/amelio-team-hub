@@ -12,6 +12,8 @@
 *.code-workspace
 !windsurf/workspace/Template.code-workspace
 
-# When amelio-team-hub is used as parent directory
+# When amelio-team-hub is used as parent directory (all install modes)
 REPOs/
+REPOs_primary/
+REPOs_secondary/
 DB_Freemium/
