@@ -139,13 +139,6 @@ sync_file() {
 # ── Skills (each folder individually — personal skills NOT in team-hub are preserved) ─
 echo -e "${BLUE}📦 Skills${NC}"
 
-# Backup skills before install to prevent accidental data loss
-if [[ "$MODE" == "install" ]] && [[ -d "$TARGET/skills" ]]; then
-    BACKUP_DIR="$TARGET/skills.bak_$(date +%Y%m%d_%H%M%S)"
-    cp -R "$TARGET/skills" "$BACKUP_DIR"
-    echo -e "   ${BLUE}├─ Backup created: $(basename "$BACKUP_DIR")${NC}"
-fi
-
 for skill_dir in "$SOURCE"/skills/*/; do
     skill_name=$(basename "$skill_dir")
     sync_folder "$skill_name" "$skill_dir" "$TARGET/skills/$skill_name"
