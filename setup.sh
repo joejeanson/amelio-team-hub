@@ -4,7 +4,8 @@
 # ============================================================================
 # Deploys shared skills, workflows, rules, and workspace to Windsurf config.
 # Safe to re-run: uses rsync/diff to update only changed files.
-# Does NOT touch existing skills/workflows — only adds/updates shared ones.
+# Skills: adds/updates team skills only — personal skills NOT in team-hub are NEVER deleted.
+# Workflows: syncs individual files — other local workflows are NEVER deleted.
 # Personal memories (.pb files) are NEVER overwritten.
 # ============================================================================
 
@@ -76,11 +77,10 @@ sync_folder() {
     if [[ "$MODE" == "install" ]]; then
         mkdir -p "$dst"
         if command -v rsync &>/dev/null; then
-            rsync -a --delete --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/"
+            # No --delete: personal files in $dst not present in $src are preserved
+            rsync -a --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/"
         else
             # Fallback for Git Bash on Windows (no rsync)
-            rm -rf "$dst"
-            mkdir -p "$dst"
             cp -R "$src/"* "$dst/" 2>/dev/null || true
             find "$dst" -name '.DS_Store' -delete 2>/dev/null || true
             find "$dst" -name '*.bak' -delete 2>/dev/null || true
@@ -93,7 +93,8 @@ sync_folder() {
         else
             local diff_count
             if command -v rsync &>/dev/null; then
-                diff_count=$(rsync -a --delete --dry-run --itemize-changes --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/" 2>/dev/null | grep -c '^' || true)
+                # No --delete: only count files that differ or are missing in $dst
+                diff_count=$(rsync -a --dry-run --itemize-changes --exclude='.DS_Store' --exclude='*.bak' "$src/" "$dst/" 2>/dev/null | grep -c '^' || true)
             else
                 # Fallback: use diff -rq (available in Git Bash)
                 diff_count=$(diff -rq "$src" "$dst" 2>/dev/null | grep -cv -e '.DS_Store' -e '.bak' || echo "0")
@@ -135,8 +136,16 @@ sync_file() {
     fi
 }
 
-# ── Skills (each folder individually — does NOT touch other local skills) ───
+# ── Skills (each folder individually — personal skills NOT in team-hub are preserved) ─
 echo -e "${BLUE}📦 Skills${NC}"
+
+# Backup skills before install to prevent accidental data loss
+if [[ "$MODE" == "install" ]] && [[ -d "$TARGET/skills" ]]; then
+    BACKUP_DIR="$TARGET/skills.bak_$(date +%Y%m%d_%H%M%S)"
+    cp -R "$TARGET/skills" "$BACKUP_DIR"
+    echo -e "   ${BLUE}├─ Backup created: $(basename "$BACKUP_DIR")${NC}"
+fi
+
 for skill_dir in "$SOURCE"/skills/*/; do
     skill_name=$(basename "$skill_dir")
     sync_folder "$skill_name" "$skill_dir" "$TARGET/skills/$skill_name"
@@ -181,7 +190,6 @@ if [[ -f "$WS_TEMPLATE" ]]; then
         echo -e "   ${BLUE}├─ Mode: team-hub as parent${NC}"
     else
         # Cross-platform home detection (works in Git Bash on Windows too)
-        local os_name
         os_name=$(uname -s 2>/dev/null || echo "Windows")
         case "$os_name" in
             Darwin)  AMELIO_DIR="/Users/${WS_USER}/Amelio_primary" ;;
